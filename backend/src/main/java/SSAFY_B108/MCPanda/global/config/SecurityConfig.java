@@ -18,6 +18,9 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(authorize -> authorize
+                // Swagger UI 접근 허용
+                .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/api-docs/**", "/v3/api-docs/**").permitAll()
+                // API 테스트를 위해 모든 요청 임시 허용
                 .anyRequest().permitAll()
             );
         

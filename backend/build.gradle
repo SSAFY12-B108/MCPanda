@@ -36,10 +36,15 @@ dependencies {
 	implementation 'org.springframework.ai:spring-ai-starter-vector-store-pinecone'
 	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
 	implementation 'org.springframework.security:spring-security-oauth2-jose'
+	
+	// springdoc-openapi 의존성 추가 (Swagger UI)
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.4.0'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	
 	compileOnly 'org.projectlombok:lombok'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
-	developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
-	developmentOnly 'org.springframework.ai:spring-ai-spring-boot-docker-compose'
+//	developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
+//	developmentOnly 'org.springframework.ai:spring-ai-spring-boot-docker-compose'
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
