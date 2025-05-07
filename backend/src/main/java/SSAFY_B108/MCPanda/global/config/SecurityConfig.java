@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractAuthenticationFilterConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
 
 /**
@@ -30,8 +31,8 @@ public class SecurityConfig {
 
                         // OAuth2 인증 관련 엔드포인트 허용
                         .requestMatchers(
-                                "/api/auth/google/login",
-                                "/api/auth/github/login").permitAll()
+                                "/api/auth/login",
+                                "/api/auth/login/oauth2/code/**").permitAll()
 
                         // 인증 필요 없는 API 엔드포인트
                         .requestMatchers(HttpMethod.GET, "/api/main").permitAll()
@@ -43,17 +44,18 @@ public class SecurityConfig {
                         // 나머지 요청은 인증 필요
                         .anyRequest().authenticated()
                 )
+                .formLogin(AbstractAuthenticationFilterConfigurer::permitAll)
                 // OAuth2 로그인 설정
                 .oauth2Login(oauth2 -> oauth2
                         .loginPage("/api/auth/login")
                         .defaultSuccessUrl("/api/auth/success", true)
                         .failureUrl("/api/auth/failure")
-                        // Google OAuth2 설정
+                        // OAuth2 설정
                         .authorizationEndpoint(endpoint -> endpoint
                                 .baseUri("/api/auth/oauth2/authorization"))
                         // OAuth2 콜백 설정
                         .redirectionEndpoint(endpoint -> endpoint
-                                .baseUri("/api/auth/**/callback"))
+                                .baseUri("/api/auth/login/oauth2/code/*"))
                 );
 
         return http.build();
