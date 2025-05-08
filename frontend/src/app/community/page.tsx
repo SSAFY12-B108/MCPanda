@@ -2,12 +2,15 @@
 "use client"
 
 import Image from "next/image";
+import { useRouter } from 'next/navigation';
 import pandaImage from "@/images/community-panda.png";
 import { useState } from "react";
-import PostItem from "@/components/community/PostItem";
+import ArticleItem from "@/components/community/ArticleItem";
 import { useArticleQuery, ArticlesParams } from "@/hooks/useArticle";
 
 export default function Page() {
+  const router = useRouter();
+  
   // 검색어 상태
   const [searchInput, setSearchInput] = useState("");
   
@@ -137,19 +140,10 @@ export default function Page() {
             <div className="text-center py-8">데이터를 불러오는데 실패했습니다</div>
           ) : data?.articles && data.articles.length > 0 ? (
             data.articles.map((article) => (
-              <PostItem
+              <ArticleItem
                 key={article._id}
-                title={article.title}
-                isNotice={article.isNotice}
-                author={article.author.name}
-                date={new Date(article.createdAt).toLocaleDateString('ko-KR', { 
-                  year: 'numeric', 
-                  month: '2-digit', 
-                  day: '2-digit' 
-                }).replace(/\. /g, '.').replace(/\.$/, '')}
-                likes={article.recommendCount}
-                comments={article.commentsCount}
-                tags={article.mcps}
+                article={article}
+                onClick={() => router.push(`/community/article/${article._id}`)}
               />
             ))
           ) : (
