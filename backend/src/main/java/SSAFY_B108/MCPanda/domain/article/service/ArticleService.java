@@ -4,9 +4,12 @@ import SSAFY_B108.MCPanda.domain.article.dto.ArticleCreateRequestDto;
 import SSAFY_B108.MCPanda.domain.article.dto.ArticleListInfoResponseDto;
 import SSAFY_B108.MCPanda.domain.article.dto.ArticlePageResponseDto;
 import SSAFY_B108.MCPanda.domain.article.dto.AuthorDto;
+import SSAFY_B108.MCPanda.domain.article.dto.ArticleUpdateRequestDto;
 import SSAFY_B108.MCPanda.domain.article.entity.Article;
 import SSAFY_B108.MCPanda.domain.article.entity.Author;
 import SSAFY_B108.MCPanda.domain.article.repository.ArticleRepository;
+import SSAFY_B108.MCPanda.global.exception.ArticleNotFoundException;
+import SSAFY_B108.MCPanda.global.exception.UnauthorizedOperationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -64,11 +67,9 @@ public class ArticleService {
 
     /**
      * ID로 특정 게시글을 조회합니다.
-     * 조회수 증가는 여기서는 일단 고려하지 않습니다. (필요하다면 추가 로직 구현)
      *
      * @param articleId 조회할 게시글의 ID
      * @return 찾아낸 Article 객체. 해당 ID의 게시글이 없으면 Optional.empty() 반환.
-     *         (또는 예외를 발생시킬 수도 있습니다. 지금은 Optional을 반환합니다.)
      */
     @Transactional(readOnly = true)
     public Optional<Article> findArticleById(String articleId) {
@@ -99,12 +100,7 @@ public class ArticleService {
         Page<Article> articlePage;
         if (search != null && !search.trim().isEmpty()) {
             // TODO: ArticleRepository에 검색을 위한 메소드 추가 필요
-            // 예: articleRepository.findByTitleContainingIgnoreCaseOrContentContainingIgnoreCase(search, search, pageable);
-            // 지금은 임시로 전체 조회 후 필터링하는 방식으로 구현 (비효율적, 추후 Repository 수정 필요)
-            // 여기서는 우선 모든 게시글을 가져온 후 서비스단에서 필터링하는 간단한 예시를 보여드리지만,
-            // 실제로는 데이터베이스 레벨에서 검색하는 것이 훨씬 효율적입니다.
-            // 우선은 검색 기능 없이 페이징만 구현된 형태로 진행하고, 검색 기능은 Repository 수정과 함께 다시 다루겠습니다.
-            articlePage = articleRepository.findAll(pageable);
+            articlePage = articleRepository.findAll(pageable); // 현재는 검색 미구현
         } else {
             articlePage = articleRepository.findAll(pageable);
         }
@@ -161,5 +157,75 @@ public class ArticleService {
         return content.substring(0, maxLength) + "...";
     }
 
-    // 여기에 앞으로 게시글 수정, 삭제, 목록 조회 등의 메소드가 추가될 예정입니다.
+    /**
+     * 게시글을 수정합니다.
+     *
+     * @param articleId 수정할 게시글의 ID
+     * @param requestDto 수정할 내용을 담은 DTO (title, content, mcps)
+     * @param loggedInMemberId 현재 로그인한 사용자의 ID (Member 엔티티의 ID를 String으로 변환한 값)
+     * @return 수정된 Article 엔티티
+     * @throws ArticleNotFoundException 게시글을 찾을 수 없는 경우
+     * @throws UnauthorizedOperationException 수정 권한이 없는 경우 (본인 게시글이 아닌 경우)
+     */
+    @Transactional
+    public Article updateArticle(String articleId, ArticleUpdateRequestDto requestDto, String loggedInMemberId) {
+        // 1. ID를 사용해 기존 게시글을 조회합니다. 게시글이 없으면 ArticleNotFoundException 발생.
+        Article existingArticle = articleRepository.findById(articleId)
+                .orElseThrow(() -> new ArticleNotFoundException("해당 ID의 게시글을 찾을 수 없습니다: " + articleId));
+
+        // 2. 현재 로그인한 사용자가 게시글 작성자인지 확인합니다.
+        if (existingArticle.getAuthor() == null || 
+            existingArticle.getAuthor().getMemberId() == null || 
+            !existingArticle.getAuthor().getMemberId().equals(loggedInMemberId)) {
+            throw new UnauthorizedOperationException("해당 게시글을 수정할 권한이 없습니다.");
+        }
+
+        // 3. DTO로부터 받은 정보로 게시글 내용을 업데이트합니다.
+        boolean needsUpdate = false;
+        if (requestDto.getTitle() != null && !requestDto.getTitle().equals(existingArticle.getTitle())) {
+            existingArticle.setTitle(requestDto.getTitle());
+            needsUpdate = true;
+        }
+        if (requestDto.getContent() != null && !requestDto.getContent().equals(existingArticle.getContent())) {
+            existingArticle.setContent(requestDto.getContent());
+            needsUpdate = true;
+        }
+        if (requestDto.getMcps() != null && !requestDto.getMcps().equals(existingArticle.getMcps())) {
+            existingArticle.setMcps(requestDto.getMcps());
+            needsUpdate = true;
+        }
+
+        // 4. 업데이트된 게시글을 저장합니다.
+        return articleRepository.save(existingArticle);
+    }
+
+    /**
+     * 게시글을 삭제합니다. (Hard Delete)
+     *
+     * @param articleId 삭제할 게시글의 ID
+     * @param loggedInMemberId 현재 로그인한 사용자의 ID (Member 엔티티의 ID를 String으로 변환한 값)
+     * @throws ArticleNotFoundException 게시글을 찾을 수 없는 경우
+     * @throws UnauthorizedOperationException 삭제 권한이 없는 경우 (본인 게시글이 아닌 경우)
+     */
+    @Transactional // 데이터 변경이 있으므로 @Transactional 어노테이션 추가
+    public void deleteArticle(String articleId, String loggedInMemberId) {
+        // 1. ID를 사용해 기존 게시글을 조회합니다. 게시글이 없으면 ArticleNotFoundException 발생.
+        Article articleToDelete = articleRepository.findById(articleId)
+                .orElseThrow(() -> new ArticleNotFoundException("삭제하려는 게시글을 찾을 수 없습니다: " + articleId));
+
+        // 2. 현재 로그인한 사용자가 게시글 작성자인지 확인합니다.
+        if (articleToDelete.getAuthor() == null ||
+            articleToDelete.getAuthor().getMemberId() == null ||
+            !articleToDelete.getAuthor().getMemberId().equals(loggedInMemberId)) {
+            throw new UnauthorizedOperationException("해당 게시글을 삭제할 권한이 없습니다.");
+        }
+
+        // 3. 게시글을 삭제합니다.
+        // MongoRepository의 deleteById 메소드는 내부적으로 해당 ID의 문서를 찾아 삭제합니다.
+        // delete(articleToDelete)를 사용해도 동일하게 동작합니다.
+        articleRepository.deleteById(articleId);
+        // 또는 articleRepository.delete(articleToDelete);
+    }
+
+    // 여기에 앞으로 게시글 삭제 등의 메소드가 추가될 예정입니다.
 }
