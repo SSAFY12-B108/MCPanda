@@ -8,6 +8,9 @@ import SSAFY_B108.MCPanda.domain.article.dto.ArticleUpdateRequestDto;
 import SSAFY_B108.MCPanda.domain.article.entity.Article;
 import SSAFY_B108.MCPanda.domain.article.entity.Author;
 import SSAFY_B108.MCPanda.domain.article.repository.ArticleRepository;
+import SSAFY_B108.MCPanda.domain.article.repository.RecommendationRepository;
+import SSAFY_B108.MCPanda.domain.article.entity.Recommendation;
+import SSAFY_B108.MCPanda.domain.article.dto.ArticleRecommendResponseDto;
 import SSAFY_B108.MCPanda.global.exception.ArticleNotFoundException;
 import SSAFY_B108.MCPanda.global.exception.UnauthorizedOperationException;
 import org.springframework.data.domain.Page;
@@ -29,12 +32,15 @@ import java.util.stream.Collectors;
 public class ArticleService {
 
     private final ArticleRepository articleRepository;
+    private final RecommendationRepository recommendationRepository;
     private static final DateTimeFormatter ISO_DATE_TIME_FORMATTER = DateTimeFormatter.ISO_DATE_TIME;
     private static final DateTimeFormatter LOCAL_DATE_TIME_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
     @Autowired
-    public ArticleService(ArticleRepository articleRepository) {
+    public ArticleService(ArticleRepository articleRepository,
+                          RecommendationRepository recommendationRepository) {
         this.articleRepository = articleRepository;
+        this.recommendationRepository = recommendationRepository;
     }
 
     /**
@@ -225,6 +231,51 @@ public class ArticleService {
         // delete(articleToDelete)를 사용해도 동일하게 동작합니다.
         articleRepository.deleteById(articleId);
         // 또는 articleRepository.delete(articleToDelete);
+    }
+
+    /**
+     * 게시글을 추천하거나 추천을 취소합니다 (토글 방식).
+     *
+     * @param articleId 대상 게시글의 ID
+     * @param memberId  현재 로그인한 사용자의 ID
+     * @return 추천 처리 결과 (메시지, 업데이트된 추천 수, 현재 추천 상태)
+     * @throws ArticleNotFoundException 게시글을 찾을 수 없는 경우
+     */
+    @Transactional
+    public ArticleRecommendResponseDto recommendOrUnrecommendArticle(String articleId, String memberId) {
+        // 1. 게시글 조회
+        Article article = articleRepository.findById(articleId)
+                .orElseThrow(() -> new ArticleNotFoundException("추천하려는 게시글을 찾을 수 없습니다: " + articleId));
+
+        // 2. 현재 사용자가 해당 게시글을 이미 추천했는지 확인
+        Optional<Recommendation> existingRecommendation = recommendationRepository.findByMemberIdAndArticleId(memberId, articleId);
+
+        String message;
+        boolean isLiked;
+
+        if (existingRecommendation.isPresent()) {
+            // 3-1. 이미 추천한 경우: 추천 취소 (Recommendation 레코드 삭제)
+            recommendationRepository.delete(existingRecommendation.get());
+            article.setRecommendCount(Math.max(0, article.getRecommendCount() - 1)); // 추천수 1 감소 (음수 방지)
+            message = "추천 취소됨";
+            isLiked = false;
+        } else {
+            // 3-2. 아직 추천하지 않은 경우: 추천 (Recommendation 레코드 생성)
+            Recommendation newRecommendation = new Recommendation(memberId, articleId);
+            // @CreatedDate 어노테이션을 Recommendation 엔티티에 사용했다면 createdAt은 자동으로 설정됩니다.
+            // 만약 Auditing 미사용 시 또는 수동 설정 원할 시:
+            // newRecommendation.setCreatedAt(LocalDateTime.now());
+            recommendationRepository.save(newRecommendation);
+            article.setRecommendCount(article.getRecommendCount() + 1); // 추천수 1 증가
+            message = "추천 완료";
+            isLiked = true;
+        }
+
+        // 4. 변경된 Article 정보 저장 (recommendCount 업데이트)
+        articleRepository.save(article);
+
+        // 5. 응답 DTO 생성 및 반환
+        return new ArticleRecommendResponseDto(message, article.getRecommendCount(), isLiked);
     }
 
     // 여기에 앞으로 게시글 삭제 등의 메소드가 추가될 예정입니다.
