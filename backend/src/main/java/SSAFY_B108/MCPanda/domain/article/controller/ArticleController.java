@@ -2,9 +2,12 @@ package SSAFY_B108.MCPanda.domain.article.controller;
 
 import SSAFY_B108.MCPanda.domain.article.dto.ArticleCreateRequestDto;
 import SSAFY_B108.MCPanda.domain.article.dto.ArticlePageResponseDto;
+import SSAFY_B108.MCPanda.domain.article.dto.ArticleUpdateRequestDto;
 import SSAFY_B108.MCPanda.domain.article.entity.Article;
 import SSAFY_B108.MCPanda.domain.article.service.ArticleService;
 import SSAFY_B108.MCPanda.domain.member.entity.Member;
+import SSAFY_B108.MCPanda.global.exception.ArticleNotFoundException;
+import SSAFY_B108.MCPanda.global.exception.UnauthorizedOperationException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -167,5 +170,135 @@ public class ArticleController {
 
         ArticlePageResponseDto articlePageResponseDto = articleService.findAllArticles(search, type, page, size);
         return ResponseEntity.ok(articlePageResponseDto);
+    }
+
+    /**
+     * 특정 ID의 게시글을 수정합니다.
+     * 요청 본문으로 게시글 제목, 내용, MCP 태그를 받으며,
+     * 현재 인증된 사용자가 해당 게시글의 작성자인 경우에만 수정이 가능합니다.
+     *
+     * @param articleId 수정할 게시글의 ID (URL 경로 변수로 전달)
+     * @param requestDto 게시글 수정에 필요한 데이터를 담은 DTO (title, content, mcps)
+     * @param loggedInMember 현재 인증된 사용자 정보 (Spring Security가 자동으로 주입)
+     * @return 수정된 게시글 정보(Article)와 함께 HTTP 200 OK 상태 코드를 반환합니다.
+     *         로그인하지 않은 경우 HTTP 401 Unauthorized.
+     *         게시글을 찾을 수 없는 경우 HTTP 404 Not Found.
+     *         수정 권한이 없는 경우 HTTP 403 Forbidden.
+     */
+    @Operation(
+            summary = "게시글 수정",
+            description = "지정된 ID를 가진 게시글의 내용을 수정합니다. 작성자 본인만 수정 가능합니다." +
+                          " API 요청 시 헤더에 유효한 인증 토큰(Bearer Token)이 필요합니다."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "게시글 수정 성공",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Article.class))),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청 형식",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(type="string", example = "요청 데이터가 유효하지 않습니다."))),
+            @ApiResponse(responseCode = "401", description = "인증 실패 (로그인 필요 또는 유효하지 않은 토큰)",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(type="string", example = "로그인이 필요합니다."))),
+            @ApiResponse(responseCode = "403", description = "접근 권한 없음 (예: 타인의 게시글 수정 시도)",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(type="string", example = "해당 게시글을 수정할 권한이 없습니다."))),
+            @ApiResponse(responseCode = "404", description = "게시글을 찾을 수 없음",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(type="string", example = "해당 ID의 게시글을 찾을 수 없습니다."))),
+            @ApiResponse(responseCode = "500", description = "서버 내부 오류",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(type="string", example = "서버 처리 중 오류가 발생했습니다.")))
+    })
+    @PutMapping("/{articleId}")
+    public ResponseEntity<?> updateArticle(
+            @Parameter(description = "수정할 게시글의 고유 ID", required = true, example = "60c72b2f9b1d8c1f7c8e4f2a")
+            @PathVariable String articleId,
+            @RequestBody ArticleUpdateRequestDto requestDto, // 추가: 요청 DTO 임포트 필요
+            @Parameter(hidden = true) @AuthenticationPrincipal Member loggedInMember
+    ) {
+        if (loggedInMember == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("로그인이 필요합니다.");
+        }
+
+        // Member 엔티티의 id 필드가 ObjectId 타입이므로, String으로 변환하여 서비스에 전달합니다.
+        String loggedInMemberId = loggedInMember.getId().toString();
+
+        try {
+            Article updatedArticle = articleService.updateArticle(articleId, requestDto, loggedInMemberId);
+            return ResponseEntity.ok(updatedArticle);
+        } catch (ArticleNotFoundException e) {
+            // @ResponseStatus(HttpStatus.NOT_FOUND) 어노테이션이 예외 클래스에 있으므로,
+            // Spring이 자동으로 404 응답을 생성합니다. 여기서 e.getMessage()를 body로 전달할 수도 있습니다.
+            // return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+            throw e; // 예외를 다시 던져 Spring의 기본 예외 처리 메커니즘 또는 @ControllerAdvice가 처리하도록 합니다.
+        } catch (UnauthorizedOperationException e) {
+            // @ResponseStatus(HttpStatus.FORBIDDEN) 어노테이션이 예외 클래스에 있으므로,
+            // Spring이 자동으로 403 응답을 생성합니다.
+            // return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+            throw e; // 마찬가지로 예외를 다시 던집니다.
+        }
+        // 그 외 예상치 못한 RuntimeException은 Spring의 기본 에러 핸들러나 @ControllerAdvice에서 처리됩니다.
+        // (보통 500 Internal Server Error)
+    }
+
+    /**
+     * 특정 ID의 게시글을 삭제합니다. (Hard Delete)
+     * 현재 인증된 사용자가 해당 게시글의 작성자인 경우에만 삭제가 가능합니다.
+     *
+     * @param articleId 삭제할 게시글의 ID (URL 경로 변수로 전달)
+     * @param loggedInMember 현재 인증된 사용자 정보 (Spring Security가 자동으로 주입)
+     * @return 삭제 성공 시 메시지와 함께 HTTP 200 OK 또는 내용 없이 HTTP 204 No Content.
+     *         로그인하지 않은 경우 HTTP 401 Unauthorized.
+     *         게시글을 찾을 수 없는 경우 HTTP 404 Not Found.
+     *         삭제 권한이 없는 경우 HTTP 403 Forbidden.
+     */
+    @Operation(
+            summary = "게시글 삭제",
+            description = "지정된 ID를 가진 게시글을 시스템에서 영구적으로 삭제합니다. 작성자 본인만 삭제 가능합니다." +
+                          " API 요청 시 헤더에 유효한 인증 토큰(Bearer Token)이 필요합니다."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "게시글 삭제 성공 (메시지 반환 시)",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(type="object", example = "{\"message\": \"게시글이 성공적으로 삭제되었습니다.\"}"))),
+            @ApiResponse(responseCode = "204", description = "게시글 삭제 성공 (내용 없음)"),
+            @ApiResponse(responseCode = "401", description = "인증 실패 (로그인 필요 또는 유효하지 않은 토큰)",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(type="string", example = "로그인이 필요합니다."))),
+            @ApiResponse(responseCode = "403", description = "접근 권한 없음 (예: 타인의 게시글 삭제 시도)",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(type="string", example = "해당 게시글을 삭제할 권한이 없습니다."))), // ArticleService에서 던지는 예외 메시지와 일치시키거나, 여기서 커스텀 가능
+            @ApiResponse(responseCode = "404", description = "게시글을 찾을 수 없음",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(type="string", example = "삭제하려는 게시글을 찾을 수 없습니다."))), // ArticleService에서 던지는 예외 메시지와 일치시키거나, 여기서 커스텀 가능
+            @ApiResponse(responseCode = "500", description = "서버 내부 오류",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(type="string", example = "서버 처리 중 오류가 발생했습니다.")))
+    })
+    @DeleteMapping("/{articleId}")
+    public ResponseEntity<?> deleteArticle(
+            @Parameter(description = "삭제할 게시글의 고유 ID", required = true, example = "60c72b2f9b1d8c1f7c8e4f2a")
+            @PathVariable String articleId,
+            @Parameter(hidden = true) @AuthenticationPrincipal Member loggedInMember
+    ) {
+        if (loggedInMember == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("로그인이 필요합니다.");
+        }
+
+        String loggedInMemberId = loggedInMember.getId().toString();
+
+        try {
+            articleService.deleteArticle(articleId, loggedInMemberId);
+            // 성공 시 메시지를 포함한 200 OK 응답 또는 204 No Content 응답을 선택할 수 있습니다.
+            // API 명세서에는 메시지 예시가 있으므로 200 OK로 반환하겠습니다.
+            return ResponseEntity.ok().body(java.util.Map.of("message", "게시글이 성공적으로 삭제되었습니다."));
+            // 만약 204 No Content를 원한다면:
+            // return ResponseEntity.noContent().build();
+        } catch (ArticleNotFoundException e) {
+            throw e; // 예외 클래스의 @ResponseStatus 어노테이션에 의해 처리됨
+        } catch (UnauthorizedOperationException e) {
+            throw e; // 예외 클래스의 @ResponseStatus 어노테이션에 의해 처리됨
+        }
     }
 }
