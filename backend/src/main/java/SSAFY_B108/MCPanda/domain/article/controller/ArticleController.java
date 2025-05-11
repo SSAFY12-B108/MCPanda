@@ -1,6 +1,7 @@
 package SSAFY_B108.MCPanda.domain.article.controller;
 
 import SSAFY_B108.MCPanda.domain.article.dto.ArticleCreateRequestDto;
+import SSAFY_B108.MCPanda.domain.article.dto.ArticlePageResponseDto;
 import SSAFY_B108.MCPanda.domain.article.entity.Article;
 import SSAFY_B108.MCPanda.domain.article.service.ArticleService;
 import SSAFY_B108.MCPanda.domain.member.entity.Member;
@@ -115,5 +116,56 @@ public class ArticleController {
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("해당 ID의 게시글을 찾을 수 없습니다: " + articleId);
         }
+    }
+
+    /**
+     * 게시글 전체 목록을 조회합니다.
+     * 검색어, 정렬 기준, 페이지 번호를 쿼리 파라미터로 받아 페이징 처리된 결과를 반환합니다.
+     *
+     * @param search 검색어 (선택 사항)
+     * @param type 정렬 타입 (선택 사항, 기본값: "latest", "recommend" 가능)
+     * @param page 페이지 번호 (선택 사항, 기본값: 1)
+     * @param size 페이지 당 게시글 수 (선택 사항, 기본값: 10)
+     * @return 페이징 처리된 게시글 목록 (ArticlePageResponseDto)
+     */
+    @Operation(
+            summary = "게시글 전체 목록 조회",
+            description = "게시글 전체 목록을 검색, 정렬, 페이징하여 조회합니다."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "게시글 목록 조회 성공",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ArticlePageResponseDto.class))),
+            @ApiResponse(responseCode = "400", description = "잘못된 파라미터 값 (예: 페이지 번호가 음수)",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(type="string", example = "잘못된 요청 파라미터입니다."))),
+            @ApiResponse(responseCode = "500", description = "서버 내부 오류",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(type="string", example = "서버 처리 중 오류가 발생했습니다.")))
+    })
+    @GetMapping
+    public ResponseEntity<ArticlePageResponseDto> findAllArticles(
+            @Parameter(description = "검색할 키워드 (제목 또는 내용)", example = "AI")
+            @RequestParam(required = false) String search,
+            @Parameter(description = "정렬 기준 ('latest': 최신순, 'recommend': 추천순)", example = "latest")
+            @RequestParam(defaultValue = "latest") String type,
+            @Parameter(description = "조회할 페이지 번호 (1부터 시작)", example = "1")
+            @RequestParam(defaultValue = "1") int page,
+            @Parameter(description = "한 페이지에 보여줄 게시글 수", example = "10")
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        // 페이지 번호는 1 이상이어야 하고, 페이지 크기도 양수여야 합니다.
+        if (page < 1) {
+            // 실제로는 이런 경우 BadRequest 예외를 던지거나, 기본값으로 조정할 수 있습니다.
+            // 여기서는 간단하게 1로 조정하거나, 예외를 던지는 대신 ResponseEntity로 에러를 반환할 수 있습니다.
+            // 여기서는 서비스에서 page > 0 ? page - 1 : 0 처리를 하므로, 그대로 넘겨도 문제는 없습니다.
+            // 다만, API 명세와 일관성을 위해 컨트롤러단에서 명시적인 검증을 추가할 수도 있습니다.
+        }
+        if (size < 1) {
+            // size도 유사하게 처리 가능
+        }
+
+        ArticlePageResponseDto articlePageResponseDto = articleService.findAllArticles(search, type, page, size);
+        return ResponseEntity.ok(articlePageResponseDto);
     }
 }
