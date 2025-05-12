@@ -1,12 +1,11 @@
-// components/community/ArticleItem.tsx
 import React from 'react';
 import { ArticleListItem } from '@/hooks/useArticle';
 import { useDateFormat } from '@/hooks/useDateFormat';
 
 interface ArticleItemProps {
-  article: Omit<ArticleListItem, 'content'>; // content만 제외 (mcps는 이미 올바른 타입)
-  onClick?: () => void; // 게시글 클릭 이벤트 추가
-  tags?: string[]; // 기존 컴포넌트에서 사용 중인 태그 속성
+  article: Omit<ArticleListItem, 'content'> | null; // article이 null일 수도 있음을 명시
+  onClick?: () => void;
+  tags?: string[];
 }
 
 const ArticleItem: React.FC<ArticleItemProps> = ({ 
@@ -14,9 +13,14 @@ const ArticleItem: React.FC<ArticleItemProps> = ({
   onClick,
   tags = []
 }) => {
-  // 커스텀 훅 사용
+    // 커스텀 훅 사용
   const { formatDate } = useDateFormat();
-  
+
+  // article이 null이면 로딩 컴포넌트 또는 빈 상태 표시
+  if (!article) {
+    return <div className="bg-white p-4 rounded-lg border text-center">데이터를 불러오는 중...</div>;
+  }
+
   return (
     <div
       className="bg-white rounded-lg border flex flex-col cursor-pointer"
@@ -65,7 +69,8 @@ const ArticleItem: React.FC<ArticleItemProps> = ({
       <div className="flex flex-row mt-2 gap-10">
         <div className="flex flex-col" style={{ minWidth: 80 }}>
           <span className="text-[1rem] text-[#888] font-medium">
-            {article.author.name || article.author.email}
+            {/* author.name이 undefined일 경우를 대비한 옵셔널 체이닝 사용 */}
+            {article.author?.name || '익명'}
           </span>
           <span className="text-[1rem] text-[#B0B0B0] mt-1">
             {formatDate(article.createdAt)}
@@ -85,6 +90,23 @@ const ArticleItem: React.FC<ArticleItemProps> = ({
                   }}
                 >
                   {tag}
+                </span>
+              ))
+            ) : article.mcps && article.mcps.length > 0 ? (
+              // mcps가 있으면 태그로 표시
+              article.mcps.map((mcp, idx) => (
+                <span
+                  key={idx}
+                  className="text-[1rem]"
+                  style={{
+                    borderRadius: 20,
+                    padding: '4px 8px',
+                    color: '#555555',
+                    background: '#EDEDED',
+                    fontSize: '0.75rem',
+                  }}
+                >
+                  {mcp}
                 </span>
               ))
             ) : null}

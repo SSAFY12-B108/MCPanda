@@ -141,9 +141,9 @@ export default function Page() {
           ) : data?.articles && data.articles.length > 0 ? (
             data.articles.map((article) => (
               <ArticleItem
-                key={article._id}
+                key={article.id}
                 article={article}
-                onClick={() => router.push(`/community/article/${article._id}`)}
+                onClick={() => router.push(`/community/${article.id}`)}
               />
             ))
           ) : (
