@@ -2,7 +2,7 @@ package SSAFY_B108.MCPanda.domain.member.service;
 
 import SSAFY_B108.MCPanda.domain.member.entity.Member;
 import SSAFY_B108.MCPanda.domain.member.repository.MemberRepository;
-import SSAFY_B108.MCPanda.global.oauth2.dto.OAuth2UserInfo;
+import SSAFY_B108.MCPanda.domain.auth.oauth2.dto.OAuth2UserInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

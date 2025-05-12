@@ -1,4 +1,4 @@
-package SSAFY_B108.MCPanda.global.oauth2.dto;
+package SSAFY_B108.MCPanda.domain.auth.oauth2.dto;
 
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
