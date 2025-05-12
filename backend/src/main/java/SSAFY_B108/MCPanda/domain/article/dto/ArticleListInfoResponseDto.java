@@ -2,7 +2,7 @@ package SSAFY_B108.MCPanda.domain.article.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
-import java.util.Set; // Article 엔티티의 mcps가 Set<String>이므로 사용
+import java.util.Map; // Article 엔티티의 mcps가 Map<String, Object>이므로 사용
 
 @Schema(description = "게시글 목록 조회 시 개별 게시글 정보 DTO")
 public class ArticleListInfoResponseDto {
@@ -19,8 +19,8 @@ public class ArticleListInfoResponseDto {
     @Schema(description = "게시글 내용 (목록용)", example = "이 게시글은 예시입니다.")
     private String content;
 
-    @Schema(description = "MCP 태그 목록", example = "[\"MCP A\", \"MCP B\"]")
-    private Set<String> mcps;
+    @Schema(description = "MCP 설정", example = "{\"AWS\": {...}, \"Notion\": {...}}")
+    private Map<String, Object> mcps;
 
     @Schema(description = "작성일시", example = "2025-05-03T14:20:00Z")
     private String createdAt; // LocalDateTime을 String으로 변환하여 전달 예정
@@ -39,7 +39,7 @@ public class ArticleListInfoResponseDto {
     }
 
     // 모든 필드를 받는 생성자 (빌더 패턴 대신 사용 가능)
-    public ArticleListInfoResponseDto(String id, boolean isNotice, String title, String content, Set<String> mcps, String createdAt, AuthorDto author, int recommendCount, int commentsCount) {
+    public ArticleListInfoResponseDto(String id, boolean isNotice, String title, String content, Map<String, Object> mcps, String createdAt, AuthorDto author, int recommendCount, int commentsCount) {
         this.id = id;
         this.isNotice = isNotice;
         this.title = title;
@@ -64,8 +64,8 @@ public class ArticleListInfoResponseDto {
     public String getContent() { return content; }
     public void setContent(String content) { this.content = content; }
 
-    public Set<String> getMcps() { return mcps; }
-    public void setMcps(Set<String> mcps) { this.mcps = mcps; }
+    public Map<String, Object> getMcps() { return mcps; }
+    public void setMcps(Map<String, Object> mcps) { this.mcps = mcps; }
 
     public String getCreatedAt() { return createdAt; }
     public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }
