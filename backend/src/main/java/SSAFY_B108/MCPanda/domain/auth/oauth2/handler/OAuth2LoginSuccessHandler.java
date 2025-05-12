@@ -1,11 +1,9 @@
-package SSAFY_B108.MCPanda.global.oauth2.handler;
+package SSAFY_B108.MCPanda.domain.auth.oauth2.handler;
 
-import SSAFY_B108.MCPanda.domain.auth.entity.RefreshToken;
+import SSAFY_B108.MCPanda.domain.auth.oauth2.dto.CustomOAuth2User;
 import SSAFY_B108.MCPanda.domain.auth.service.RefreshTokenService;
-import SSAFY_B108.MCPanda.global.jwt.JwtProvider;
-import SSAFY_B108.MCPanda.global.oauth2.dto.CustomOAuth2User;
+import SSAFY_B108.MCPanda.global.jwt.JwtTokenProvider;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -15,8 +13,6 @@ import org.springframework.security.web.authentication.SimpleUrlAuthenticationSu
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 
 /**
  *  OAuth2 인증 성공 시 jWT 토큰을 생성하고 쿠키에 저장하는 핸들러
@@ -24,9 +20,9 @@ import java.time.temporal.ChronoUnit;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
+public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
     
-    private final JwtProvider jwtProvider;
+    private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenService refreshTokenService;
     
     // OAuth2 인증 성공 시 호출되는 메서드
@@ -40,14 +36,16 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         // 회원 ID 가져오기 (MongoDB ObjectId)
         String memberId = oAuth2User.getMemberId();
         // JWT 토큰 생성
-        String accessToken = jwtProvider.createAccessToken(authentication);
-        String refreshToken = jwtProvider.createRefreshToken(authentication);
+        String accessToken = jwtTokenProvider.createAccessToken(authentication);
+        String refreshToken = jwtTokenProvider.createRefreshToken(authentication);
 
         // RefreshToken 저장
         refreshTokenService.saveRefreshToken(memberId, refreshToken);
 
         // AccessToken을 HttpOnly 쿠키로 설정
         refreshTokenService.setAccessTokenCookie(response, accessToken);
+        // RefreshToken을 HttpOnly 쿠키로 설정
+        refreshTokenService.setRefreshTokenCookie(response, refreshToken);
 
         // 프론트엔드 리다이렉트 URL 설정
         String targetUrl = determineTargetUrl(request, response);

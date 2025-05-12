@@ -9,7 +9,7 @@ import SSAFY_B108.MCPanda.domain.board.entity.Author;
 import SSAFY_B108.MCPanda.domain.board.entity.Comment;
 import SSAFY_B108.MCPanda.domain.board.repository.ArticleRepository;
 import SSAFY_B108.MCPanda.global.exception.CustomException;
-import SSAFY_B108.MCPanda.global.response.StatusCode;
+import SSAFY_B108.MCPanda.global.response.ApiStatusCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -18,7 +18,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.NoSuchElementException;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -99,7 +98,7 @@ public class ArticleService {
         
         // 작성자 검증
         if (!article.getAuthor().getId().equals(userId)) {
-            throw new CustomException(StatusCode.FORBIDDEN, "게시글 수정 권한이 없습니다.");
+            throw new CustomException(ApiStatusCode.FORBIDDEN, "게시글 수정 권한이 없습니다.");
         }
         
         article.update(requestDto.getTitle(), requestDto.getContent(), requestDto.getMcps(), requestDto.getCategory());
@@ -116,7 +115,7 @@ public class ArticleService {
         
         // 작성자 검증
         if (!article.getAuthor().getId().equals(userId)) {
-            throw new CustomException(StatusCode.FORBIDDEN, "게시글 삭제 권한이 없습니다.");
+            throw new CustomException(ApiStatusCode.FORBIDDEN, "게시글 삭제 권한이 없습니다.");
         }
         
         articleRepository.delete(article);
@@ -129,7 +128,7 @@ public class ArticleService {
         
         // 자신의 게시글에는 추천할 수 없도록 검증 (선택사항)
         if (article.getAuthor().getId().equals(userId)) {
-            throw new CustomException(StatusCode.BAD_REQUEST, "자신의 게시글에는 추천할 수 없습니다.");
+            throw new CustomException(ApiStatusCode.BAD_REQUEST, "자신의 게시글에는 추천할 수 없습니다.");
         }
         
         article.increaseRecommendCount();
@@ -173,7 +172,7 @@ public class ArticleService {
                 .anyMatch(comment -> comment.getId().equals(commentId) && comment.getAuthor().getId().equals(userId));
                 
         if (!isCommentAuthor) {
-            throw new CustomException(StatusCode.FORBIDDEN, "댓글 삭제 권한이 없습니다.");
+            throw new CustomException(ApiStatusCode.FORBIDDEN, "댓글 삭제 권한이 없습니다.");
         }
         
         article.removeComment(commentId);
