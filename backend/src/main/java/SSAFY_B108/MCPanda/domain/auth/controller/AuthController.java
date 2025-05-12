@@ -1,5 +1,9 @@
 package SSAFY_B108.MCPanda.domain.auth.controller;
 
+import SSAFY_B108.MCPanda.domain.auth.repository.RefreshTokenRepository;
+import SSAFY_B108.MCPanda.global.jwt.JwtProvider;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -7,9 +11,15 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
 
+@Slf4j
 @RestController
 @RequestMapping ("/api/auth")
+@RequiredArgsConstructor
 public class AuthController {
+
+    private final JwtProvider jwtProvider;
+    private final RefreshTokenRepository refreshTokenRepository;
+
 
     @GetMapping("/login")
     public ResponseEntity<Map<String,String>> login() {
