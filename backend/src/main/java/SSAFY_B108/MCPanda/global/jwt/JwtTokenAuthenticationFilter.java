@@ -14,6 +14,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Optional;
 
 /**
  * JWT 인증을 처리하는 필터
@@ -50,21 +51,14 @@ public class JwtTokenAuthenticationFilter extends OncePerRequestFilter {
         log.debug("사용할 토큰: {}", jwt != null ?
                 jwt.substring(0, Math.min(10, jwt.length())) + "..." : "null");
 
-        // 토큰 처리 로직
-        if (StringUtils.hasText(jwt)) {
-            try {
-                if (jwtTokenProvider.validateToken(jwt)) {
-                    Authentication authentication = jwtTokenProvider.getAuthentication(jwt);
-                    SecurityContextHolder.getContext().setAuthentication(authentication);
-                    log.debug("Security Context에 '{}' 인증 정보를 저장했습니다. 권한: {}",
-                            authentication.getName(),
-                            authentication.getAuthorities());
-                } else {
-                    log.warn("유효하지 않은 토큰입니다. 토큰: {}",
-                            jwt.substring(0, Math.min(10, jwt.length())) + "...");
-                }
-            } catch (Exception e) {
-                log.error("토큰 처리 중 예외 발생: {}", e.getMessage(), e);
+        // 토큰이 존재하고 유효한 경우 인증 정보 설정
+        if (StringUtils.hasText(jwt) && jwtTokenProvider.validateToken(jwt)) {
+            Authentication authentication = jwtTokenProvider.getAuthentication(jwt);
+            if (authentication != null) {
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+                log.debug("Security Context에 '{}' 인증 정보를 저장했습니다.", authentication.getName());
+            } else {
+                log.debug("Authentication 객체가 null입니다.");
             }
         } else {
             log.debug("토큰이 제공되지 않았습니다.");
