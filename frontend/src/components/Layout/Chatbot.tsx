@@ -1,8 +1,6 @@
-// components/Chatbot.tsx
 "use client";
 import { useState } from "react";
 import Image from "next/image";
-import pandaImage from "@/images/community-panda.png";
 
 const Chatbot = () => {
   const [messages, setMessages] = useState([
@@ -34,7 +32,7 @@ const Chatbot = () => {
           <div className="bg-[#0095FF] text-white px-4 py-3 flex items-center justify-between">
             <div className="font-bold text-md flex items-center gap-1">
               <Image
-                src="chatbot.png"
+                src="/chatbot.png"
                 alt="chatbot_img"
                 width={32}
                 height={32}
@@ -62,7 +60,7 @@ const Chatbot = () => {
           </div>
 
           {/* Message list */}
-          <div className="flex-1 p-4 space-y-3 text-sm">
+          <div className="flex-1 p-4 space-y-3 text-sm overflow-y-auto">
             {messages.map((msg, i) => (
               <div
                 key={i}
@@ -80,10 +78,17 @@ const Chatbot = () => {
           {/* Input area */}
           <div className="flex items-center border-t border-gray-200 px-2 py-3 gap-2">
             <textarea
+              value={input}
               rows={1}
               className="flex-1 text-sm px-3 py-2 rounded-md border border-gray-300 focus:outline-none"
               placeholder="질문을 입력하세요."
               onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSend();
+                }
+              }}
             />
             <button className="bg-blue-100 p-2 rounded-md" onClick={handleSend}>
               🐼
@@ -92,7 +97,7 @@ const Chatbot = () => {
         </div>
       ) : (
         <Image
-          src={pandaImage}
+          src="/chatbot.png"
           alt="chatbot_img"
           width={80}
           height={80}
