@@ -13,20 +13,21 @@ import org.springframework.stereotype.Component;
 
 import java.security.Key;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Date;
 import java.util.stream.Collectors;
 
 @Slf4j
 @Component
-public class JwtProvider {
+public class JwtTokenProvider {
     // JWT 서명에 사용할 키
     private final Key key;
 
-    // access Token의 유효기간 (밀리초 단위)
+    // access Token 유효기간 (밀리초 단위)
     private final long accessTokenValidityInMilliseconds;
 
-    // refresh Token의 유효기간 (밀리초 단위)
+    // refresh Token 유효기간 (밀리초 단위)
     private final long refreshTokenValidityInMilliseconds;
 
     /**
@@ -36,12 +37,24 @@ public class JwtProvider {
      * @param accessTokenValidityInSeconds AccessToken 유효 시간 (초 단위)
      * @param refreshTokenValidityInSeconds RefreshToken 유효 시간 (초 단위)
      */
-    public JwtProvider(
+    public JwtTokenProvider(
             @Value("${jwt.secret}") String secretKey,
             @Value("${jwt.access-token-validity-in-seconds}") long accessTokenValidityInSeconds,
             @Value("${jwt.refresh-token-validity-in-seconds}") long refreshTokenValidityInSeconds) {
+
+        log.info("Secret key: {}", secretKey);
         // 비밀 키를 바이트 배열로 변환하여 HMAC SHA 키 생성
-        this.key = Keys.hmacShaKeyFor(secretKey.getBytes());
+        try {
+            // Base64 디코딩을 사용하여 키 생성
+            byte[] decodedKey = Base64.getDecoder().decode(secretKey);
+            log.info("Decoded key: {}", decodedKey);
+            log.info("Decoded key length: {} bytes", decodedKey.length);
+
+            this.key = Keys.hmacShaKeyFor(decodedKey);
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid Base64 encoded secret key: {}", e.getMessage());
+            throw new RuntimeException("JWT 시크릿 키가 유효하지 않습니다.", e);
+        }
         
         // 초 단위를 밀리초 단위로 변환
         this.accessTokenValidityInMilliseconds = accessTokenValidityInSeconds * 1000;
@@ -112,7 +125,7 @@ public class JwtProvider {
         Collection<? extends GrantedAuthority> authorities =
                 Arrays.stream(claims.get("auth",String.class).split(","))
                         .map(SimpleGrantedAuthority::new)
-                        .toList(); // 불변 리스트의 경우 사용가능(JWT는 불변한 리스트임)
+                        .toList(); // 불변 리스트의 경우 사용가능 (JWT는 불변한 리스트임)
 
         User principal = new User(claims.getSubject(),"",authorities);
 
@@ -133,28 +146,6 @@ public class JwtProvider {
             return true;
         } catch (JwtException | IllegalArgumentException e) {
             // 토큰 파싱 실패 시 로그 기록
-            log.info("Invalid JWT token: {}", e.getMessage());
-            return false;
-        }
-    }
-
-    /**
-     * 만료된 토큰도 검증 (RefreshToken 검증용)
-     *
-     * @param token 검증할 JWT 토큰
-     * @return 서명이 유효하면 true, 아니면 false
-     */
-    public boolean validateTokenIgnoringExpiration(String token) {
-        try {
-            // 토큰 파싱 시도 (만료 검사 무시)
-            Jws<Claims> claims = Jwts.parserBuilder()
-                    .setSigningKey(key)
-                    .build()
-                    .parseClaimsJws(token);
-            // 만료 예외는 무시하고 true 반환
-            return true;
-        } catch (JwtException | IllegalArgumentException e) {
-            // 기타 예외는 false 반환
             log.info("Invalid JWT token: {}", e.getMessage());
             return false;
         }
