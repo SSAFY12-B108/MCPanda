@@ -1,8 +1,11 @@
 package SSAFY_B108.MCPanda.global.response;
 
+import lombok.Getter;
+
 /**
  * API 응답 상태 코드를 관리하는 열거형
  */
+@Getter
 public enum StatusCode {
     // 성공 코드 (2xx)
     OK(200, "성공적으로 처리되었습니다."),
@@ -27,11 +30,4 @@ public enum StatusCode {
         this.message = message;
     }
 
-    public int getCode() {
-        return code;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-} 
+}

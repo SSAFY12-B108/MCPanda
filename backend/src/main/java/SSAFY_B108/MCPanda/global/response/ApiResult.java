@@ -1,16 +1,19 @@
 package SSAFY_B108.MCPanda.global.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.Getter;
 
 /**
  * 모든 API 응답의 공통 형식을 위한 wrapper 클래스
  * @param <T> 응답 데이터의 타입
  */
+@Getter
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ApiResult<T> {
-    private int code;
-    private String message;
-    private T data;
+    // Getter 메소드들
+    private final int code;
+    private final String message;
+    private final T data;
 
     // 성공 응답 생성 메소드 (데이터 있음)
     public static <T> ApiResult<T> success(T data) {
@@ -59,16 +62,4 @@ public class ApiResult<T> {
         this.data = data;
     }
 
-    // Getter 메소드들
-    public int getCode() {
-        return code;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public T getData() {
-        return data;
-    }
-} 
+}
