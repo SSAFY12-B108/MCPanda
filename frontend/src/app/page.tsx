@@ -1,10 +1,13 @@
+'use client';
 
 import CombinationBox from "@/components/Home/CombinationBox";
 import Header from "@/components/Layout/Header";
 import Chatbot from '@/components/Layout/Chatbot';
-
+import { useMainPage } from '@/hooks/useMainPage';
 
 export default function Home() {
+  const { data: articles, isLoading, isError } = useMainPage();
+
   return (
     <>
       <div>
@@ -37,7 +40,13 @@ export default function Home() {
                 <option value="docker">Docker</option>
               </select>
             </div>
-            <CombinationBox title="이거 추천함용ㅇㅅㅇㅇㅇ멍너얌너얀머얌넝" tags={['react', 'spring', 'LLM Chain of']} likes={1} />
+            <ul className="space-y-4">
+              {articles?.map((article) => (
+                <li key={article.articleId} className="p-4 border rounded-lg shadow-sm hover:shadow-md transition">
+                  <CombinationBox title={article.title} tags={article.mcps} likes={1} />
+                </li>
+              ))}
+            </ul>
           </div>
           <Chatbot />
         </div>
