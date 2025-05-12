@@ -4,29 +4,40 @@ import apiClient from '@/api/client';
 
 // 공통 인터페이스
 export interface Author {
-  memberId: string;
-  email: string;
-  name?: string;
-  nickname?: string;
+  memberId?: string;  // 게시글 상세에는 있지만 목록에는 없을 수 있음
+  nickname?: string;  // 게시글 상세에는 있지만 목록에는 없을 수 있음
+  name?: string;      // 목록에는 있지만 상세에는 없을 수 있음
 }
 
 export interface Comment {
-  id: string;
+  id: string | null;  // API 응답에서 id가 null일 수 있음
   author: Author;
   content: string;
   createdAt: string;
 }
 
-// MCP 타입 정의
-// 목록 페이지의 MCP (문자열 배열)
-export type McpList = string[];
-
-// 상세 페이지의 MCP (객체)
-export interface McpContent {
-  [key: string]: Record<string, unknown>;
+// 새로운 MCP 타입 정의
+export interface McpServer {
+  command: string;
+  args: string[];
+  env?: Record<string, string>;
+  disabled?: boolean;
+  autoApprove?: string[];
 }
 
-// 게시글 공통 속성 (mcps 제외)
+export interface McpServers {
+  [serverName: string]: McpServer;
+}
+
+export interface McpCategory {
+  mcpServers: McpServers;
+}
+
+export interface Mcps {
+  [category: string]: McpCategory;
+}
+
+// 게시글 공통 속성
 interface ArticleBase {
   id: string;
   title: string;
@@ -34,18 +45,18 @@ interface ArticleBase {
   createdAt: string;
   author: Author;
   recommendCount: number;
-  isNotice: boolean;
+  notice: boolean; // API 응답에서는 isNotice가 아닌 notice로 변경됨
 }
 
 // 게시글 목록용 인터페이스
 export interface ArticleListItem extends ArticleBase {
-  mcps: McpList;
+  mcps: Mcps;
   commentsCount: number;
 }
 
 // 게시글 상세 보기용 인터페이스
 export interface ArticleDetail extends ArticleBase {
-  mcps: McpContent;
+  mcps: Mcps;
   comments: Comment[];
 }
 
@@ -75,6 +86,9 @@ export const useArticleQuery = (params: ArticlesParams) => {
   return useQuery({
     queryKey: ['articles', params],
     queryFn: async () => {
+      // 디버깅을 위한 로그 추가
+      console.log('검색 파라미터:', params);
+      
       const searchParams = new URLSearchParams();
       
       if (params.search) {
@@ -84,8 +98,16 @@ export const useArticleQuery = (params: ArticlesParams) => {
       searchParams.append('type', params.type);
       searchParams.append('page', params.page.toString());
       
-      const { data } = await apiClient.get<ArticlesResponse>(`/articles?${searchParams.toString()}`);
-      return data;
+      const queryString = searchParams.toString();
+      console.log('실제 API 요청 URL:', `/articles?${queryString}`);
+      
+      try {
+        const { data } = await apiClient.get<ArticlesResponse>(`/articles?${queryString}`);
+        return data;
+      } catch (error) {
+        console.error('API 요청 오류:', error);
+        throw error;
+      }
     },
     placeholderData: (previousData) => previousData,
     staleTime: 1000 * 60 * 5,
@@ -116,7 +138,6 @@ export const useRecommendArticle = (articleId: string) => {
     },
     onSuccess: (data) => {
       // API 응답에서 받은 추천 정보로 게시글 데이터 직접 업데이트
-      // 낙관적 업데이트 없이 실제 응답 데이터 사용
       
       // 현재 캐시된 게시글 데이터 가져오기
       const currentArticle = queryClient.getQueryData<ArticleDetail>(['article', articleId]);
@@ -134,7 +155,7 @@ export const useRecommendArticle = (articleId: string) => {
         isLiked: data.isLiked
       });
       
-      // 목록 페이지의 캐시된 데이터도 업데이트 (필요한 경우)
+      // 목록 페이지의 캐시된 데이터도 업데이트
       const articlesQueries = queryClient.getQueriesData<ArticlesResponse>({ 
         queryKey: ['articles'] 
       });
@@ -158,7 +179,6 @@ export const useRecommendArticle = (articleId: string) => {
         }
       });
     },
-    // onError 핸들러는 유지 (백엔드 호출 실패 시 대응)
     onError: (error) => {
       console.error('추천 처리 중 오류 발생:', error);
       // 오류 발생 시 사용자에게 알림 표시 등의 처리 가능

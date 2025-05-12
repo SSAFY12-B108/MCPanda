@@ -13,13 +13,16 @@ const ArticleItem: React.FC<ArticleItemProps> = ({
   onClick,
   tags = []
 }) => {
-    // 커스텀 훅 사용
+  // 커스텀 훅 사용
   const { formatDate } = useDateFormat();
 
   // article이 null이면 로딩 컴포넌트 또는 빈 상태 표시
   if (!article) {
     return <div className="bg-white p-4 rounded-lg border text-center">데이터를 불러오는 중...</div>;
   }
+
+  // API 응답 변경: mcps는 이제 객체
+  const mcpCategories = Object.keys(article.mcps || {});
 
   return (
     <div
@@ -36,7 +39,8 @@ const ArticleItem: React.FC<ArticleItemProps> = ({
       <div className="flex items-center justify-between w-full">
         <div className="flex items-center">
           <span className="text-[1.1rem] text-[#222]">{article.title}</span>
-          {article.isNotice && (
+          {/* API 응답 변경: isNotice → notice */}
+          {article.notice && (
             <span
               className="ml-5 text-xs font-semibold"
               style={{
@@ -69,7 +73,7 @@ const ArticleItem: React.FC<ArticleItemProps> = ({
       <div className="flex flex-row mt-2 gap-10">
         <div className="flex flex-col" style={{ minWidth: 80 }}>
           <span className="text-[0.9rem] text-[#888] font-medium">
-            {/* author.name이 undefined일 경우를 대비한 옵셔널 체이닝 사용 */}
+            {/* API 응답 변경: author 구조가 변경됨 */}
             {article.author?.name || '익명'}
           </span>
           <span className="text-[0.9rem] text-[#B0B0B0] mt-1">
@@ -92,9 +96,9 @@ const ArticleItem: React.FC<ArticleItemProps> = ({
                   {tag}
                 </span>
               ))
-            ) : article.mcps && article.mcps.length > 0 ? (
-              // mcps가 있으면 태그로 표시
-              article.mcps.map((mcp, idx) => (
+            ) : mcpCategories.length > 0 ? (
+              // mcps의 key 값을 태그로 표시
+              mcpCategories.map((category, idx) => (
                 <span
                   key={idx}
                   className="text-[1rem]"
@@ -106,7 +110,7 @@ const ArticleItem: React.FC<ArticleItemProps> = ({
                     fontSize: '0.7rem',
                   }}
                 >
-                  {mcp}
+                  {category}
                 </span>
               ))
             ) : null}
