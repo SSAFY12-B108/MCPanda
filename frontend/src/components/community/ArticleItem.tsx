@@ -28,21 +28,21 @@ const ArticleItem: React.FC<ArticleItemProps> = ({
         borderColor: '#E2E8F0',
         boxShadow: '0px 3px 16px 0px rgba(0,0,0,0.05)',
         background: '#FFF',
-        padding: '16px 20px',
+        padding: '12px 16px',
       }}
       onClick={onClick}
     >
       {/* 제목/공지/추천/댓글 */}
       <div className="flex items-center justify-between w-full">
         <div className="flex items-center">
-          <span className="text-[1.25rem] text-[#222]">{article.title}</span>
+          <span className="text-[1.1rem] text-[#222]">{article.title}</span>
           {article.isNotice && (
             <span
               className="ml-5 text-xs font-semibold"
               style={{
                 borderRadius: 5,
                 padding: '2px 8px',
-                fontSize: '0.75rem',
+                fontSize: '0.7rem',
                 color: '#0095FF',
                 background: '#E1F3FF',
                 marginLeft: 5,
@@ -53,12 +53,12 @@ const ArticleItem: React.FC<ArticleItemProps> = ({
           )}
         </div>
         <div className="flex items-center gap-[15px]">
-          <div className="flex items-center gap-1 text-[#2196F3]" style={{ fontSize: 20, fontWeight: 600 }}>
+          <div className="flex items-center gap-1 text-[#2196F3]" style={{ fontSize: 18, fontWeight: 600 }}>
             {/* 엄지척(추천) 아이콘 */}
             <span>👍</span>
             <span>{article.recommendCount}</span>
           </div>
-          <div className="flex items-center gap-1 text-[#2196F3]" style={{ fontSize: 20, fontWeight: 600 }}>
+          <div className="flex items-center gap-1 text-[#2196F3]" style={{ fontSize: 18, fontWeight: 600 }}>
             {/* 말풍선(댓글) 아이콘 */}
             <span>🗨️</span>
             <span>{article.commentsCount || 0}</span>
@@ -68,11 +68,11 @@ const ArticleItem: React.FC<ArticleItemProps> = ({
       {/* 작성자/날짜, 태그 */}
       <div className="flex flex-row mt-2 gap-10">
         <div className="flex flex-col" style={{ minWidth: 80 }}>
-          <span className="text-[1rem] text-[#888] font-medium">
+          <span className="text-[0.9rem] text-[#888] font-medium">
             {/* author.name이 undefined일 경우를 대비한 옵셔널 체이닝 사용 */}
             {article.author?.name || '익명'}
           </span>
-          <span className="text-[1rem] text-[#B0B0B0] mt-1">
+          <span className="text-[0.9rem] text-[#B0B0B0] mt-1">
             {formatDate(article.createdAt)}
           </span>
           <div className="flex flex-row flex-wrap gap-2 items-center mt-2">
@@ -86,7 +86,7 @@ const ArticleItem: React.FC<ArticleItemProps> = ({
                     padding: '4px 8px',
                     color: '#555555',
                     background: '#EDEDED',
-                    fontSize: '0.75rem',
+                    fontSize: '0.7rem',
                   }}
                 >
                   {tag}
@@ -103,7 +103,7 @@ const ArticleItem: React.FC<ArticleItemProps> = ({
                     padding: '4px 8px',
                     color: '#555555',
                     background: '#EDEDED',
-                    fontSize: '0.75rem',
+                    fontSize: '0.7rem',
                   }}
                 >
                   {mcp}
