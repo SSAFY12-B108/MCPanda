@@ -10,7 +10,6 @@ const Chatbot = () => {
     const [input, setInput] = useState("");
     //열고 닫기 
     const [isOpen, setIsOpen] = useState(false)
-    const [isClosed, setIsClosed] = useState(false)
 
 
     const handleSend = () => {
