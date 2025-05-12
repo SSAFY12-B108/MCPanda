@@ -52,7 +52,12 @@ export default function CommentSection({ comments = [], currentUserId }: Comment
   const handleDeleteComment = (commentId: string) => {
     checkLoginAndProceed(() => {
       if (window.confirm("댓글을 삭제하시겠습니까?")) {
-        deleteCommentMutation.mutate(commentId);
+        // null 체크 추가
+        if (commentId) {
+          deleteCommentMutation.mutate(commentId);
+        } else {
+          console.error("댓글 ID가 null입니다");
+        }
       }
     });
   };
@@ -110,16 +115,16 @@ export default function CommentSection({ comments = [], currentUserId }: Comment
           </div>
         ) : (
           comments.map((comment) => (
-            // id 속성 사용 (기존 _id에서 변경)
             <div key={comment.id} className="border-b border-gray-100 pb-4">
               <div className="flex justify-between items-center">
-                <p className="font-bold">{comment.author?.name || comment.author?.email}</p>
+                {/* API 응답 변경: 이제 author는 nickname을 포함함 */}
+                <p className="font-bold">{comment.author?.nickname || '익명'}</p>
                 <div className="flex items-center gap-3">
-                  {/* id 속성 사용 (기존 _id에서 변경) */}
+                  {/* memberId 필드 유지: 현재 사용자의 ID와 비교 */}
                   {comment.author?.memberId === currentUserId && (
                     <button 
                       className="text-gray-500 text-sm hover:text-red-500 transition"
-                      onClick={() => handleDeleteComment(comment.id)}
+                      onClick={() => handleDeleteComment(comment.id || '')}
                       disabled={deleteCommentMutation.isPending}
                     >
                       {deleteCommentMutation.isPending && deleteCommentMutation.variables === comment.id 

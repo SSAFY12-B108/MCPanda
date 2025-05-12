@@ -1,4 +1,3 @@
-// app/community/CommunityClient.tsx
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -9,8 +8,6 @@ import ArticleItem from "@/components/community/ArticleItem";
 import { useArticleQuery, ArticlesParams } from "@/hooks/useArticle";
 import Image from "next/image";
 import pandaImage from "@/images/community-panda.png";
-
-// + Header, Chatbot, ArticleItem 등 포함해서 기존 UI 코드 전부 여기에 옮기세요
 
 export default function CommunityClient() {
   const router = useRouter();
