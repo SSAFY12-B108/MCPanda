@@ -14,6 +14,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Optional;
 
 /**
  * JWT 인증을 처리하는 필터
@@ -44,8 +45,12 @@ public class JwtTokenAuthenticationFilter extends OncePerRequestFilter {
         // 토큰이 존재하고 유효한 경우 인증 정보 설정
         if (StringUtils.hasText(jwt) && jwtTokenProvider.validateToken(jwt)) {
             Authentication authentication = jwtTokenProvider.getAuthentication(jwt);
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-            log.debug("Security Context에 '{}' 인증 정보를 저장했습니다.", authentication.getName());
+            if (authentication != null) {
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+                log.debug("Security Context에 '{}' 인증 정보를 저장했습니다.", authentication.getName());
+            } else {
+                log.debug("Authentication 객체가 null입니다.");
+            }
         } else {
             log.debug("유효한 토큰이 없습니다.");
         }
