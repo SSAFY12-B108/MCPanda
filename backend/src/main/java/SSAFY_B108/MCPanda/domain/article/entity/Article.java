@@ -7,7 +7,7 @@ import org.springframework.data.mongodb.core.mapping.Field; // 필드명 명시�
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Set; // mcps를 위해 Set 사용
+import java.util.Map;
 
 @Document(collection = "articles") // 이 클래스가 MongoDB의 "articles" 컬렉션에 매핑됨을 나타냅니다.
 public class Article {
@@ -23,7 +23,8 @@ public class Article {
 
     private String content; // 게시글 내용
 
-    private Set<String> mcps; // 예: {"MCP_A", "MCP_B"} 같은 태그 저장
+    // 기존 Set<String> mcps를 Map으로 변경
+    private Map<String, Object> mcps;
 
     private Author author; // 위에서 만든 Author 클래스 타입
 
@@ -67,11 +68,11 @@ public class Article {
         this.content = content;
     }
 
-    public Set<String> getMcps() {
+    public Map<String, Object> getMcps() {
         return mcps;
     }
 
-    public void setMcps(Set<String> mcps) {
+    public void setMcps(Map<String, Object> mcps) {
         this.mcps = mcps;
     }
 
@@ -112,7 +113,7 @@ public class Article {
     }
 
     // 모든 필드를 사용하는 생성자 (선택 사항)
-    public Article(String title, boolean isNotice, String content, Set<String> mcps, Author author, LocalDateTime createdAt, int recommendCount, List<Comment> comments) {
+    public Article(String title, boolean isNotice, String content, Map<String, Object> mcps, Author author, LocalDateTime createdAt, int recommendCount, List<Comment> comments) {
         this.title = title;
         this.isNotice = isNotice;
         this.content = content;
