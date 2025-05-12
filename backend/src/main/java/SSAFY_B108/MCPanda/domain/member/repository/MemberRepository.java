@@ -51,12 +51,6 @@ public interface MemberRepository extends MongoRepository<Member, ObjectId> {
     List<Member> findByLikedPostsContaining(ObjectId postId);
 
     /**
-     * 특정 기간 이후에 가입한 회원 목록 조회
-     */
-    @Query("{ 'created_at': { $gte: ?0 }, 'deleted_at': null }")
-    List<Member> findByCreatedAtAfter(LocalDateTime date);
-
-    /**
      * 소프트 삭제된 회원 조회
      */
     @Query("{ 'deleted_at': { $ne: null } }")

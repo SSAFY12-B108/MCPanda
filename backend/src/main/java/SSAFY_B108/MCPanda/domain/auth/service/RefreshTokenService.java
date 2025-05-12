@@ -45,6 +45,7 @@ public class RefreshTokenService {
         } else {
             // 새 토큰 생성
             RefreshToken newRefreshToken = RefreshToken.builder()
+                    .memberId(memberId) // Added memberId
                     .token(token)
                     .expiryDate(expiryDate)
                     .build();
@@ -52,6 +53,25 @@ public class RefreshTokenService {
             log.info("새 RefreshToken 저장: {}", memberId);
         }
     }
+
+    /**
+     * RefreshToken을 HttpOnly 쿠키로 설정
+     * @param response
+     * @param token
+     */
+    public void setRefreshTokenCookie(HttpServletResponse response, String token) {
+        Cookie cookie = new Cookie("refreshToken", token);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true); // HTTPS에서만 전송
+        cookie.setPath("/api/auth/reissue"); // RefreshToken은 재발급 요청 시에만 필요
+        cookie.setMaxAge(14 * 24 * 60 * 60); // RefreshToken 유효기간: 14일 (초 단위)
+
+        cookie.setAttribute("SameSite", "Lax"); // CSRF 방지를 위해 Lax
+
+        response.addCookie(cookie);
+        log.info("RefreshToken 쿠키 설정 완료");
+    }
+
     /**
      *  RefreshToken 검증
      */
@@ -90,5 +110,35 @@ public class RefreshTokenService {
         
         response.addCookie(cookie);
         log.info("AccessToken 쿠키 설정 완료");
+    }
+
+    /**
+     * AccessToken 쿠키 삭제
+     * @param response
+     */
+    public void deleteAccessTokenCookie(HttpServletResponse response) {
+        Cookie cookie = new Cookie("accessToken", null);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true);
+        cookie.setPath("/");
+        cookie.setMaxAge(0); // 쿠키 즉시 만료
+        cookie.setAttribute("SameSite", "Lax");
+        response.addCookie(cookie);
+        log.info("AccessToken 쿠키 삭제 완료");
+    }
+
+    /**
+     * RefreshToken 쿠키 삭제
+     * @param response
+     */
+    public void deleteRefreshTokenCookie(HttpServletResponse response) {
+        Cookie cookie = new Cookie("refreshToken", null);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true);
+        cookie.setPath("/api/auth/reissue"); // 생성 시 설정한 경로와 동일해야 함
+        cookie.setMaxAge(0); // 쿠키 즉시 만료
+        cookie.setAttribute("SameSite", "Lax");
+        response.addCookie(cookie);
+        log.info("RefreshToken 쿠키 삭제 완료");
     }
 }
