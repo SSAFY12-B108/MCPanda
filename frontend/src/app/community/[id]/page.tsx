@@ -1,6 +1,8 @@
 "use client";
 import McpCodeSection from "@/components/community/McpCodeSection";
 import CommentSection from "@/components/community/CommentSection";
+import Header from "@/components/Layout/Header";
+import Chatbot from '@/components/Layout/Chatbot';
 import React, { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useArticleDetail, useRecommendArticle, useDeleteArticle } from "@/hooks/useArticle";
@@ -95,6 +97,8 @@ export default function Page() {
 
   return (
     <div className="mx-auto">
+      <Header />
+      
       <div className="mx-auto w-[920px] bg-white p-20 min-h-screen">
         <div className="flex justify-between items-center">
           <div className="flex items-center">
@@ -161,6 +165,8 @@ export default function Page() {
         {/* <CommentSection comments={article.comments} currentUserId={user?.id} /> */}
         <CommentSection comments={article.comments} />
       </div>
+
+      <Chatbot/>
     </div>
   );
 }

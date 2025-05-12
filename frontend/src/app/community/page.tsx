@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import pandaImage from "@/images/community-panda.png";
 import { useState } from "react";
 import ArticleItem from "@/components/community/ArticleItem";
+import Header from "@/components/Layout/Header";
+import Chatbot from '@/components/Layout/Chatbot';
 import { useArticleQuery, ArticlesParams } from "@/hooks/useArticle";
 
 export default function Page() {
@@ -57,17 +59,19 @@ export default function Page() {
   };
 
   return (
-    <div className="mx-auto">
+    <div className="mx-auto mb-[100px]">
+      <Header />
+
       <div className="mx-auto w-[920px]">
         {/* 안내 문구 및 캐릭터 */}
         <div className="mt-[120px] flex flex-col items-center">
-          <p className="text-3xl font-bold">나만의 MCP 조합을 공유해봐요!</p>
+          <p className="text-2xl font-bold">나만의 MCP 조합을 공유해봐요!</p>
           <Image
             src={pandaImage}
             alt="Panda Community"
-            width={230}
-            height={230}
-            className="mt-[35px]"
+            width={200}
+            height={200}
+            className="mt-[35px] mb-[100px]"
           />
         </div>
 
@@ -95,14 +99,14 @@ export default function Page() {
           <input
             type="text"
             placeholder="검색어를 입력하세요."
-            className="w-full py-4 focus:outline-none text-lg placeholder-custom"
+            className="w-full py-3 focus:outline-none text-base placeholder-custom"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             onKeyPress={handleKeyPress}
           />
           <button
             type="button"
-            className="bg-[#1E88E5] text-white text-lg font-semibold whitespace-nowrap mr-5"
+            className="bg-[#1E88E5] text-white text-base font-semibold whitespace-nowrap mr-5"
             style={{ padding: "4px 16px", borderRadius: 10 }}
             onClick={handleSearch}
           >
@@ -112,7 +116,7 @@ export default function Page() {
         
         {/* 최신순 | 추천순 필터 */}
         <div
-          className="flex items-center mt-[25px] text-[1.15rem]"
+          className="flex items-center mt-[25px] text-[1rem]"
           style={{ color: "#6B7280" }}
         >
           <span
@@ -233,6 +237,8 @@ export default function Page() {
           </div>
         )}
       </div>
+
+      <Chatbot />
     </div>
   );
 }
