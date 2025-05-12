@@ -1,6 +1,7 @@
 // components/Chatbot.tsx
 "use client"
 import { useState } from "react";
+import Image from "next/image";
 
 const Chatbot = () => {
     const [messages, setMessages] = useState([
@@ -8,7 +9,7 @@ const Chatbot = () => {
         { type: "user", text: "MCP 초보자인데 추천 조합 알려주세요." }
     ]);
     const [input, setInput] = useState("");
-    //열고 닫기 
+    //열고 닫기
     const [isOpen, setIsOpen] = useState(false)
 
 
@@ -31,7 +32,7 @@ const Chatbot = () => {
                     {/* Header */}
                     <div className="bg-[#0095FF] text-white px-4 py-3 flex items-center justify-between">
                         <div className="font-bold text-md flex items-center gap-1">
-                            <img src="chatbot.png" alt="chatbot_img" className='w-8' />
+                            <Image src="chatbot.png" alt="chatbot_img" width={32} height={32} className='w-8' />
                             <span>MCPanda 챗봇</span>
                         </div>
                         <button onClick={openModal} className="text-xl font-bold">X</button>
@@ -81,7 +82,7 @@ const Chatbot = () => {
                         </button>
                     </div>
                 </div>
-                : <img src="chatbot.png" alt="chatbot_img" className="w-20 fixed bottom-6 right-6 cursor-pointer z-50"
+                : <Image src="chatbot.png" alt="chatbot_img" width={80} height={80} className="w-20 fixed bottom-6 right-6 cursor-pointer z-50"
                     onClick={openModal} />
             }
 
