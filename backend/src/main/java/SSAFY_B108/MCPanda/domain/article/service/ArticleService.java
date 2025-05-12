@@ -196,10 +196,6 @@ public class ArticleService {
             existingArticle.setContent(requestDto.getContent());
             needsUpdate = true;
         }
-        if (requestDto.getMcps() != null && !requestDto.getMcps().equals(existingArticle.getMcps())) {
-            existingArticle.setMcps(requestDto.getMcps());
-            needsUpdate = true;
-        }
 
         // 4. 업데이트된 게시글을 저장합니다.
         return articleRepository.save(existingArticle);
