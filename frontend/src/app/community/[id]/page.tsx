@@ -116,7 +116,7 @@ export default function Page() {
         </div>
         
         <div className="mt-2 text-[#888A8C] flex">
-          <p className="mr-3">{article.author.name || article.author.email}</p>
+          <p className="mr-3">{article.author?.nickname || '익명'}</p>
           <p>{formatDate(article.createdAt)}</p>
         </div>
         
