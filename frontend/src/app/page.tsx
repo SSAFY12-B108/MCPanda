@@ -4,6 +4,7 @@ import CombinationBox from "@/components/Home/CombinationBox";
 import Header from "@/components/Layout/Header";
 import Chatbot from '@/components/Layout/Chatbot';
 import { useMainPage } from '@/hooks/useMainPage';
+import Image from "next/image";
 
 export default function Home() {
   const { data: articles, isLoading, isError } = useMainPage();
@@ -23,9 +24,11 @@ export default function Home() {
                 <div>쉽게 시작하세요</div>
               </div>
 
-              <img
+              <Image
                 src="/logo.png"
                 alt="MCPanda_Logo"
+                width={160}
+                height={160}
                 className="w-40"
               />
             </div>
