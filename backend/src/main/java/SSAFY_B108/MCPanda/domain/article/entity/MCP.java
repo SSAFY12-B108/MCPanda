@@ -13,13 +13,16 @@ public class MCP {
     
     private String name; // MCP 이름 (예: "AWS")
     
+    private String category; // 카테고리 추가 (Backend, Frontend, Infrastructure, Others)
+    
     private Map<String, Object> mcpServers; // MCP 서버 정보
     
     public MCP() {
     }
     
-    public MCP(String name, Map<String, Object> mcpServers) {
+    public MCP(String name, String category, Map<String, Object> mcpServers) {
         this.name = name;
+        this.category = category;
         this.mcpServers = mcpServers;
     }
     
@@ -37,6 +40,14 @@ public class MCP {
     
     public void setName(String name) {
         this.name = name;
+    }
+    
+    public String getCategory() {
+        return category;
+    }
+    
+    public void setCategory(String category) {
+        this.category = category;
     }
     
     public Map<String, Object> getMcpServers() {
