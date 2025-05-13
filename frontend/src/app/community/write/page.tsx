@@ -3,6 +3,9 @@ import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
 import Header from "@/components/Layout/Header";
+import { useRouter } from "next/navigation";
+import useAuthStore from "@/stores/authStore";
+
 
 const toolsList = [
   "Figma",
@@ -28,6 +31,11 @@ export default function Write() {
     content: "",
   });
 
+  const router = useRouter();
+
+  const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
+
+
   const toggleTool = (tool: string) => {
     setSelectedTools((prev) => {
       if (prev.includes(tool)) return prev.filter((t) => t !== tool);
@@ -48,10 +56,11 @@ export default function Write() {
   },
   onSuccess: () => {
     alert("작성 완료! 🎉");
-    // TODO: router.push('/community'); 이동 등 추가 가능
+    router.push('/community');
   },
   onError: () => {
     alert("업로드에 실패했습니다.");
+    console.log('게시글 업로드 실패',errors)
   },
 });
 
@@ -78,8 +87,13 @@ export default function Write() {
 
     setErrors(newErrors);
 
-    if (!hasError) {
-      alert("작성 완료");
+    if (!hasError && isLoggedIn) {
+      createArticle.mutate(); // 글 생성 
+    } 
+
+    else if (!isLoggedIn) {
+      alert("로그인 후 작성할 수 있어요!");
+      router.push("/auth/login");
     }
   };
 
@@ -105,7 +119,7 @@ export default function Write() {
         {/* 툴 선택 */}
         <div className="mb-6">
           <label className="block mb-2 font-semibold text-gray-800">
-            활용 툴{" "}
+            MCP 선택 
             <span className="text-xs text-gray-500">(최대 3개 선택)</span>
           </label>
           <div className="flex flex-wrap gap-2">

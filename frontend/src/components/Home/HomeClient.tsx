@@ -37,7 +37,7 @@ export default function HomeClient() {
             className="text-sm p-1 text-gray-600 rounded-md border"
             style={{ borderColor: '#0095FF' }}
           >
-            <option value="">툴 선택</option>
+            <option value="">MCP 선택</option>
             <option value="react">React</option>
             <option value="notion">Notion</option>
             <option value="docker">Docker</option>
