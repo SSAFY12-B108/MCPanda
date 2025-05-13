@@ -1,5 +1,7 @@
 "use client";
 import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import axios from "axios";
 import Header from "@/components/Layout/Header";
 
 const toolsList = [
@@ -13,6 +15,7 @@ const toolsList = [
   "AWS",
   "Spring Boot",
 ];
+
 
 export default function Write() {
   const [title, setTitle] = useState("");
@@ -33,6 +36,26 @@ export default function Write() {
     });
   };
 
+  // 작성하기 버튼 클릭 시 호출되는 함수
+  const createArticle = useMutation({
+  mutationFn: async () => {
+    const response = await axios.post("/api/articles", {
+      title,
+      content,
+      mcps: selectedTools,
+    });
+    return response.data;
+  },
+  onSuccess: () => {
+    alert("작성 완료! 🎉");
+    // TODO: router.push('/community'); 이동 등 추가 가능
+  },
+  onError: () => {
+    alert("업로드에 실패했습니다.");
+  },
+});
+
+  // 폼 제출 핸들러
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const newErrors = { title: "", tools: "", content: "" };
