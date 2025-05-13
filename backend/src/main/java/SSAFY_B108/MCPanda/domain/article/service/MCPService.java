@@ -84,14 +84,14 @@ public class MCPService {
      * DTO를 MCP 엔티티로 변환합니다.
      */
     public MCP convertToEntity(MCPCreateRequestDto dto) {
-        return new MCP(dto.getName(), dto.getMcpServers());
+        return new MCP(dto.getName(), dto.getCategory(), dto.getMcpServers());
     }
 
     /**
      * MCP 엔티티를 ResponseDTO로 변환합니다.
      */
     public MCPResponseDto convertToDto(MCP mcp) {
-        return new MCPResponseDto(mcp.getId(), mcp.getName(), mcp.getMcpServers());
+        return new MCPResponseDto(mcp.getId(), mcp.getName(), mcp.getCategory(), mcp.getMcpServers());
     }
 
     /**

@@ -61,10 +61,6 @@ public class Member {
     @Field("updated_at")
     private LocalDateTime updatedAt;
 
-    // 삭제 일시 (soft delete)
-    @Field("deleted_at")
-    private LocalDateTime deletedAt;
-
     // 좋아요한 게시글 목록
     @Builder.Default
     @Field("liked_posts")
@@ -94,34 +90,6 @@ public class Member {
      */
     public void updateNickname(String nickname) {
         this.nickname = nickname;
-    }
-
-    /**
-     * 회원 삭제 (soft delete)
-     */
-    public void delete() {
-        this.deletedAt = LocalDateTime.now();
-    }
-
-    /**
-     * 이메일 익명화
-     */
-    public void anonymizeEmail(String anonymousEmail) {
-        this.email = anonymousEmail;
-    }
-
-    /**
-     * 이름 익명화
-     */
-    public void anonymizeName(String anonymousName) {
-        this.name = anonymousName;
-    }
-
-    /**
-     * 프로필 이미지 제거
-     */
-    public void removeProfileImage() {
-        this.profileImage = null;
     }
 
     /**
