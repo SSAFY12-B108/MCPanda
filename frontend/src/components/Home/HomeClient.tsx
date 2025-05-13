@@ -47,7 +47,7 @@ export default function HomeClient() {
         <ul className="space-y-4">
           {articles?.map((article) => (
             <li key={article.articleId} className="p-4 border rounded-lg shadow-sm hover:shadow-md transition">
-              <CombinationBox title={article.title} tags={article.mcps} likes={1} />
+              <CombinationBox title={article.title} tags={article.mcps} recommendCount={1} />
             </li>
           ))}
         </ul>

@@ -60,6 +60,7 @@ export default function Write() {
   },
   onError: () => {
     alert("업로드에 실패했습니다.");
+    console.log(title, content, selectedTools)
     console.log('게시글 업로드 실패',errors)
   },
 });
