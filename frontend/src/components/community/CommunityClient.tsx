@@ -6,12 +6,13 @@ import Header from "@/components/Layout/Header";
 import Chatbot from "@/components/Layout/Chatbot";
 import ArticleItem from "@/components/community/ArticleItem";
 import { useArticleQuery, ArticlesParams } from "@/hooks/useArticle";
-import Link from "next/link";
 import Image from "next/image";
 import pandaImage from "@/images/community-panda.png";
+import useAuthStore from "@/stores/authStore";
 
 export default function CommunityClient() {
   const router = useRouter();
+  const { isLoggedIn } = useAuthStore();
 
   // 검색어 상태
   const [searchInput, setSearchInput] = useState("");
@@ -141,8 +142,8 @@ export default function CommunityClient() {
             </span>
           </div>
           {/* 글 작성 버튼 */}
-          <Link href="/community/write">
-            <button style={{
+          <button
+            style={{
               padding: '8px 12px',
               backgroundColor: '#1E88E5',
               color: 'white',
@@ -150,10 +151,20 @@ export default function CommunityClient() {
               borderRadius: '5px',
               fontSize: '0.9rem',
               cursor: 'pointer'
-            }}>
-              글 작성하기
-            </button>
-          </Link>
+            }}
+            onClick={() => {
+              if (isLoggedIn) {
+                router.push("/community/write");
+              } else {
+                const confirmLogin = window.confirm("로그인한 사용자만 이용할 수 있습니다. 로그인 페이지로 이동하시겠습니까?");
+                if (confirmLogin) {
+                  router.push("/auth/login");
+                }
+              }
+            }}
+          >
+            글 작성하기
+          </button>
         </div>
 
         {/* 게시글 목록 */}

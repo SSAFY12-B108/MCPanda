@@ -68,16 +68,6 @@ export default function CommentSection({ comments = [], currentUserId }: Comment
     }
   };
 
-  const handleTextareaFocus = () => {
-    if (!currentUserId) {
-      const confirmLogin = window.confirm("로그인이 필요한 서비스입니다. 로그인 페이지로 이동하시겠습니까?");
-      
-      if (confirmLogin) {
-        router.push("/auth/login");
-      }
-    }
-  };
-
   // 안전하게 comments 배열의 길이 확인
   const commentsCount = comments?.length || 0;
 
@@ -87,20 +77,18 @@ export default function CommentSection({ comments = [], currentUserId }: Comment
       
       <div className="mt-4">
         <textarea
-          className="w-full p-4 border border-gray-200 rounded-md resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+          className="w-full p-4 border border-gray-200 rounded-md resize-none focus:outline-none focus:border-blue-500 transition"
           rows={4}
           placeholder={currentUserId ? "댓글을 작성하세요. (Ctrl + Enter로 등록)" : "로그인 후 댓글을 작성할 수 있습니다."}
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
           onKeyDown={handleKeyPress}
-          onFocus={handleTextareaFocus}
-          disabled={!currentUserId}
         ></textarea>
         <div className="flex justify-end mt-2">
-          <button 
+          <button
             className="bg-blue-500 text-white px-4 py-2 rounded-md cursor-pointer disabled:opacity-50 hover:bg-blue-600 transition"
             onClick={handleCommentSubmit}
-            disabled={!newComment.trim() || addCommentMutation.isPending || !currentUserId}
+            disabled={!newComment.trim() || addCommentMutation.isPending}
           >
             {addCommentMutation.isPending ? "등록 중..." : "등록"}
           </button>
@@ -129,7 +117,7 @@ export default function CommentSection({ comments = [], currentUserId }: Comment
                     >
                       {deleteCommentMutation.isPending && deleteCommentMutation.variables === comment.id 
                         ? "삭제 중..." 
-                        : "삭제"}
+                        : "댓글 삭제"}
                     </button>
                   )}
                   <p className="text-sm text-gray-500">{formatDate(comment.createdAt)}</p>
