@@ -10,6 +10,10 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Component;
+import SSAFY_B108.MCPanda.domain.auth.oauth2.dto.CustomOAuth2User;
+import SSAFY_B108.MCPanda.domain.member.entity.Member;
+import SSAFY_B108.MCPanda.domain.member.repository.MemberRepository;
+import org.bson.types.ObjectId;
 
 import java.security.Key;
 import java.util.Arrays;
@@ -30,6 +34,8 @@ public class JwtTokenProvider {
     // refresh Token 유효기간 (밀리초 단위)
     private final long refreshTokenValidityInMilliseconds;
 
+    private final MemberRepository memberRepository;
+
     /**
      * 설정 값을 주입받아 초기화하는 생성자
      *
@@ -40,7 +46,8 @@ public class JwtTokenProvider {
     public JwtTokenProvider(
             @Value("${jwt.secret}") String secretKey,
             @Value("${jwt.access-token-validity-in-seconds}") long accessTokenValidityInSeconds,
-            @Value("${jwt.refresh-token-validity-in-seconds}") long refreshTokenValidityInSeconds) {
+            @Value("${jwt.refresh-token-validity-in-seconds}") long refreshTokenValidityInSeconds,
+            MemberRepository memberRepository) {
 
         log.info("Secret key: {}", secretKey);
         // 비밀 키를 바이트 배열로 변환하여 HMAC SHA 키 생성
@@ -59,6 +66,7 @@ public class JwtTokenProvider {
         // 초 단위를 밀리초 단위로 변환
         this.accessTokenValidityInMilliseconds = accessTokenValidityInSeconds * 1000;
         this.refreshTokenValidityInMilliseconds = refreshTokenValidityInSeconds * 1000;
+        this.memberRepository = memberRepository;
     }
 
     /**
@@ -69,6 +77,13 @@ public class JwtTokenProvider {
      */
 
     public String createAccessToken(Authentication authentication) {
+        // 1. Principal 객체에서 회원 ID 추출
+        String memberId = null;
+        
+        if (authentication.getPrincipal() instanceof CustomOAuth2User) {
+            memberId = ((CustomOAuth2User) authentication.getPrincipal()).getMemberId();
+        } 
+        
         // 권한 정보 문자열로 변환 (쉼표로 구분)
         String authorities = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
@@ -79,7 +94,7 @@ public class JwtTokenProvider {
 
         // JWT 토큰 생성 및 반환
         return Jwts.builder()
-                .setSubject(authentication.getName())  // 토큰 제목 (사용자 ID)
+                .setSubject(memberId) // Member ID를 subject로 사용
                 .claim("auth", authorities)             // 권한 정보
                 .setIssuedAt(new Date(now))            // 발행 시간
                 .setExpiration(validity)               // 만료 시간
@@ -114,23 +129,33 @@ public class JwtTokenProvider {
      * @return Spring Security Authentication 객체
      */
     public Authentication getAuthentication(String token) {
-        // 토큰에서 클레임(내용) 추출
         Claims claims = Jwts.parserBuilder()
                 .setSigningKey(key)
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
-
-        // 권한 정보 추출 및 GrantedAuthority 객체로 변환
+        
+        String memberId = claims.getSubject();
         Collection<? extends GrantedAuthority> authorities =
-                Arrays.stream(claims.get("auth",String.class).split(","))
-                        .map(SimpleGrantedAuthority::new)
-                        .toList(); // 불변 리스트의 경우 사용가능 (JWT는 불변한 리스트임)
-
-        User principal = new User(claims.getSubject(),"",authorities);
-
-        // Authentication 객체 생성 및 반환
-        return new UsernamePasswordAuthenticationToken(principal,token,authorities);
+                Arrays.stream(claims.get("auth", String.class).split(","))
+                      .map(SimpleGrantedAuthority::new)
+                      .toList();
+        
+        try {
+            // ObjectId 변환 시도
+            ObjectId objectId = new ObjectId(memberId);
+            Member member = memberRepository.findById(objectId).orElse(null);
+            
+            if (member != null) {
+                return new UsernamePasswordAuthenticationToken(member, token, authorities);
+            }
+        } catch (Exception e) {
+            log.error("Member ID 변환 오류: {}", e.getMessage());
+        }
+        
+        // 모든 시도가 실패하면 기본 Authentication 반환 (또는 요구사항에 따라 null도 가능)
+        return new UsernamePasswordAuthenticationToken(
+            new User(memberId, "", authorities), token, authorities);
     }
 
     /**
@@ -157,9 +182,9 @@ public class JwtTokenProvider {
      * @param token JWT 토큰
      * @return 사용자 이름
      */
-    public String getUsernameFromToken(String token) {
+    public String getMemberIdFromToken(String token) {
         try {
-            // 토큰에서 사용자 이름 추출
+            // 토큰에서 memberId 추출
             return Jwts.parserBuilder()
                     .setSigningKey(key)
                     .build()

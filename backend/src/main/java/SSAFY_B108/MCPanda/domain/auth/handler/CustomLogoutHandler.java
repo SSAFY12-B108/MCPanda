@@ -26,32 +26,7 @@ public class CustomLogoutHandler implements LogoutHandler {
     public void logout(HttpServletRequest request, HttpServletResponse response, Authentication authentication) {
         log.info("CustomLogoutHandler: 사용자의 로그아웃을 시도합니다.");
 
-        String memberId = null;
-
-        // 1. 현재 인증 정보(Authentication 객체)에서 사용자 식별자(memberId) 추출 시도
-        if (authentication != null && authentication.isAuthenticated()) {
-            Object principal = authentication.getPrincipal();
-
-            if (principal instanceof CustomOAuth2User) {
-                memberId = ((CustomOAuth2User) principal).getMemberId();
-                log.info("CustomOAuth2User로부터 memberId 추출: {}", memberId);
-            } else if (principal instanceof User) {
-                String username = ((User) principal).getUsername();
-                log.info("UserDetails로부터 username 추출: {}. DB에서 memberId 조회가 필요할 수 있음.", username);
-                // 예시: memberId = memberRepository.findByEmail(username).map(Member::getId).map(ObjectId::toHexString).orElse(null);
-            }
-
-            if (memberId != null) {
-                log.info("DB에서 memberId '{}'에 해당하는 RefreshToken을 삭제합니다.", memberId);
-                refreshTokenService.deleteRefreshToken(memberId);
-            } else {
-                log.warn("인증 정보(principal)로부터 memberId를 확인할 수 없어 DB의 RefreshToken을 삭제하지 못했습니다.");
-            }
-        } else {
-            log.info("인증된 사용자 정보(principal)가 없어 DB의 RefreshToken 삭제를 진행하지 않습니다.");
-        }
-
-        // 2. 요청 헤더나 쿠키에서 AccessToken을 직접 읽어 처리하는 부분
+        // 요청 헤더나 쿠키에서 AccessToken을 직접 읽어 처리하는 부분
         String accessToken = null;
         // 먼저 Authorization 헤더에서 토큰 추출 시도
         String bearerToken = request.getHeader("Authorization");
@@ -72,15 +47,33 @@ public class CustomLogoutHandler implements LogoutHandler {
 
         if (StringUtils.hasText(accessToken)) {
             try {
+                // AccessToken 유효성 검증 및 memberId 추출
                 if (jwtTokenProvider.validateToken(accessToken)) {
-                    String email = jwtTokenProvider.getUsernameFromToken(accessToken);
-                    log.info("로그아웃 요청에서 유효한 AccessToken 발견. 사용자: {}", email);
-                    // 여기서 email을 memberId로 변환하는 로직이 필요함 (MemberRepository 사용 등)
-                    // 만약 memberId를 얻었다면:
-                    // refreshTokenService.deleteRefreshToken(memberIdFromEmail);
+                    String memberIdFromToken = jwtTokenProvider.getMemberIdFromToken(accessToken); // getMemberIdFromToken 사용 (memberId 반환)
+                    log.info("로그아웃 요청에서 유효한 AccessToken 발견. 사용자 ID: {}", memberIdFromToken);
+
+                    // 추출한 memberId로 DB의 RefreshToken 삭제 시도
+                    if (StringUtils.hasText(memberIdFromToken)) {
+                        log.info("AccessToken 기반으로 DB에서 memberId '{}'의 RefreshToken 삭제를 시도합니다.", memberIdFromToken);
+                        refreshTokenService.deleteRefreshToken(memberIdFromToken);
+                    } else {
+                        log.warn("AccessToken에서 memberId를 추출하지 못했습니다.");
+                    }
+                } else {
+                    log.info("로그아웃 요청의 AccessToken이 유효하지 않습니다.");
                 }
             } catch (Exception e) {
-                log.warn("로그아웃 중 AccessToken 검증 오류: {}", e.getMessage());
+                // ExpiredJwtException 등 발생 시에도 memberId 추출은 가능할 수 있음
+                try {
+                    // 만료된 토큰에서도 memberId 추출 시도
+                    String memberIdFromExpiredToken = jwtTokenProvider.getMemberIdFromToken(accessToken); // getMemberIdFromToken 사용
+                    if (StringUtils.hasText(memberIdFromExpiredToken)) {
+                        log.info("만료된 AccessToken에서 사용자 ID 추출 성공: {}. RefreshToken 삭제 시도.", memberIdFromExpiredToken);
+                        refreshTokenService.deleteRefreshToken(memberIdFromExpiredToken);
+                    }
+                } catch (Exception innerEx) {
+                    log.warn("로그아웃 중 AccessToken 처리 오류 (만료 토큰 처리 포함): {}", e.getMessage());
+                }
             }
         } else {
             log.info("로그아웃 요청에서 AccessToken을 찾을 수 없습니다.");
