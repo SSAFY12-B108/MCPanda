@@ -12,6 +12,9 @@ public class MCPResponseDto {
     @Schema(description = "MCP 이름", example = "AWS")
     private String name;
     
+    @Schema(description = "MCP 카테고리", example = "Backend")
+    private String category;
+    
     @Schema(description = "MCP 서버 구성 정보")
     private Map<String, Object> mcpServers;
     
@@ -20,9 +23,10 @@ public class MCPResponseDto {
     }
     
     // 모든 필드를 받는 생성자
-    public MCPResponseDto(String id, String name, Map<String, Object> mcpServers) {
+    public MCPResponseDto(String id, String name, String category, Map<String, Object> mcpServers) {
         this.id = id;
         this.name = name;
+        this.category = category;
         this.mcpServers = mcpServers;
     }
     
@@ -41,6 +45,14 @@ public class MCPResponseDto {
     
     public void setName(String name) {
         this.name = name;
+    }
+    
+    public String getCategory() {
+        return category;
+    }
+    
+    public void setCategory(String category) {
+        this.category = category;
     }
     
     public Map<String, Object> getMcpServers() {
