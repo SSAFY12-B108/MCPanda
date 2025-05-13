@@ -14,7 +14,9 @@ import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap; // HashMap 임포트 추가
 import java.util.List;
+import java.util.Map; // Map 임포트 추가
 
 /**
  * 회원 정보 엔티티
@@ -44,12 +46,10 @@ public class Member {
     @Builder.Default
     private String role = "USER";
 
-    // OAuth2 제공자 (google, github)
-    private String provider;
-
-    // OAuth2 제공자의 고유 ID
-    @Field("providerId")
-    private String providerId;
+    // OAuth2 제공자 정보 (Key: provider 이름, Value: provider 고유 ID)
+    @Field("oauth_ids")
+    @Builder.Default
+    private Map<String, String> oauthIds = new HashMap<>();
 
     // 생성 일시
     @CreatedDate
@@ -80,6 +80,16 @@ public class Member {
     }
 
     /**
+     * OAuth2 제공자 정보 추가 (계정 연동 시 사용)
+     */
+    public void addOAuthId(String provider, String providerId) {
+        if (this.oauthIds == null) {
+            this.oauthIds = new HashMap<>();
+        }
+        this.oauthIds.put(provider, providerId);
+    }
+
+    /**
      * 닉네임 업데이트
      */
     public void updateNickname(String nickname) {
@@ -91,6 +101,36 @@ public class Member {
      */
     public void delete() {
         this.deletedAt = LocalDateTime.now();
+    }
+
+    /**
+     * 이메일 익명화
+     */
+    public void anonymizeEmail(String anonymousEmail) {
+        this.email = anonymousEmail;
+    }
+
+    /**
+     * 이름 익명화
+     */
+    public void anonymizeName(String anonymousName) {
+        this.name = anonymousName;
+    }
+
+    /**
+     * 프로필 이미지 제거
+     */
+    public void removeProfileImage() {
+        this.profileImage = null;
+    }
+
+    /**
+     * OAuth 연동 정보 모두 제거
+     */
+    public void clearOAuthIds() {
+        if (this.oauthIds != null) {
+            this.oauthIds.clear();
+        }
     }
 
     /**

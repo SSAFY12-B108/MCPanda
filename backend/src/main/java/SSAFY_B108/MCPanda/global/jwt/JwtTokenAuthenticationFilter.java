@@ -33,14 +33,23 @@ public class JwtTokenAuthenticationFilter extends OncePerRequestFilter {
      */
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+        // 요청 정보 로깅
+        log.debug("====== JWT Filter 시작: {} {} ======", request.getMethod(), request.getRequestURI());
+
         // 헤더에서 JWT 토큰 추출
         String jwtFromHeader = resolveTokenFromHeader(request);
+        log.debug("헤더에서 추출한 토큰: {}", jwtFromHeader != null ?
+                jwtFromHeader.substring(0, Math.min(10, jwtFromHeader.length())) + "..." : "null");
 
         // 쿠키에서 JWT 토큰 추출
         String jwtFromCookie = resolveTokenFromCookie(request);
+        log.debug("쿠키에서 추출한 토큰: {}", jwtFromCookie != null ?
+                jwtFromCookie.substring(0, Math.min(10, jwtFromCookie.length())) + "..." : "null");
 
         // 헤더 또는 쿠키에서 가져온 토큰 중 하나 선택
         String jwt = jwtFromHeader != null ? jwtFromHeader : jwtFromCookie;
+        log.debug("사용할 토큰: {}", jwt != null ?
+                jwt.substring(0, Math.min(10, jwt.length())) + "..." : "null");
 
         // 토큰이 존재하고 유효한 경우 인증 정보 설정
         if (StringUtils.hasText(jwt) && jwtTokenProvider.validateToken(jwt)) {
@@ -52,10 +61,25 @@ public class JwtTokenAuthenticationFilter extends OncePerRequestFilter {
                 log.debug("Authentication 객체가 null입니다.");
             }
         } else {
-            log.debug("유효한 토큰이 없습니다.");
+            log.debug("토큰이 제공되지 않았습니다.");
         }
+
+        // 현재 인증 상태 로깅
+        Authentication currentAuth = SecurityContextHolder.getContext().getAuthentication();
+        log.debug("필터 통과 전 인증 상태: {}",
+                currentAuth != null ?
+                        currentAuth.getName() + ", 인증됨: " + currentAuth.isAuthenticated() : "인증 없음");
+
         // 다음 필터 실행
         filterChain.doFilter(request, response);
+
+        // 필터 체인 완료 후 인증 상태 로깅
+        Authentication afterAuth = SecurityContextHolder.getContext().getAuthentication();
+        log.debug("필터 통과 후 인증 상태: {}",
+                afterAuth != null ?
+                        afterAuth.getName() + ", 인증됨: " + afterAuth.isAuthenticated() : "인증 없음");
+
+        log.debug("====== JWT Filter 종료: {} {} ======", request.getMethod(), request.getRequestURI());
     }
 
     /**
@@ -63,9 +87,14 @@ public class JwtTokenAuthenticationFilter extends OncePerRequestFilter {
      */
     private String resolveTokenFromHeader(HttpServletRequest request) {
         String bearerToken = request.getHeader(AUTHORIZATION_HEADER);
+        log.debug("Authorization 헤더 값: {}", bearerToken);
+
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(BEARER_PREFIX)) {
-           return bearerToken.substring(7);
+            String token = bearerToken.substring(7);
+            log.debug("헤더에서 추출 성공: {}", token.substring(0, Math.min(10, token.length())) + "...");
+            return token;
         }
+        log.debug("Authorization 헤더에서 토큰을 추출할 수 없습니다.");
         return null;
     }
 
@@ -75,11 +104,20 @@ public class JwtTokenAuthenticationFilter extends OncePerRequestFilter {
     private String resolveTokenFromCookie(HttpServletRequest request) {
         Cookie[] cookies = request.getCookies();
         if (cookies != null) {
+            log.debug("요청에 포함된 쿠키 수: {}", cookies.length);
             for (Cookie cookie : cookies) {
+                log.debug("쿠키 확인: {}={}", cookie.getName(),
+                        cookie.getValue() != null ?
+                                cookie.getValue().substring(0, Math.min(10, cookie.getValue().length())) + "..." : "null");
+
                 if ("accessToken".equals(cookie.getName())) {
+                    log.debug("accessToken 쿠키에서 토큰 추출 성공");
                     return cookie.getValue();
                 }
             }
+            log.debug("accessToken 쿠키를 찾을 수 없습니다.");
+        } else {
+            log.debug("요청에 쿠키가 없습니다.");
         }
         return null;
     }

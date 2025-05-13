@@ -5,10 +5,12 @@ import SSAFY_B108.MCPanda.domain.member.repository.MemberRepository;
 import SSAFY_B108.MCPanda.domain.auth.oauth2.dto.OAuth2UserInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.bson.types.ObjectId;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  *  회원 관련 비즈니스 로직을 처리하는 서비스
@@ -30,17 +32,28 @@ public class MemberService {
     public Member saveOrUpdateOAuth2User(OAuth2UserInfo userInfo, String registrationId) {
         log.info("OAuth2 사용자 정보 처리: email={}, provider={}", userInfo.getEmail(), registrationId);
 
-        // 제공자 및 제공자 ID로 회원 조회
-        Optional<Member> existingMember = memberRepository
-                .findByProviderIdAndProvider(userInfo.getId(),registrationId);
+        // email로 회원 조회
+        Optional<Member> memberByEmail = memberRepository.findByEmail(userInfo.getEmail());
 
-        if(existingMember.isPresent()) {
-            // 기존 회원이면 정보 업데이트
-            log.info("기존 회원 정보 업데이트: email={}", userInfo.getEmail());
-            return updateExistingMember(existingMember.get(),userInfo);
+        if(memberByEmail.isPresent()) {
+            // 일치하는 회원이 있는 경우
+            Member existringMember = memberByEmail.get();
+
+            // 이미 해당 제공자로 연동된 계정인지 확인
+            if (existringMember.getOauthIds() != null && existringMember.getOauthIds().containsKey(registrationId)) {
+                // 기존 제공자로 로그인한 경우, 정보만 업데이트
+                log.info("기존 회원 정보 업데이트: email={}, provider={}", userInfo.getEmail(), registrationId);
+                return updateExistingMember(existringMember,userInfo);
+            } else {
+                // 다른 제공자로 로그인했지만 동일 이메일 -> 계정 연동
+                log.info("계정 연동: email={}, provider={}", userInfo.getEmail(), registrationId);
+                existringMember.addOAuthId(registrationId,userInfo.getId());
+                return updateExistingMember(existringMember,userInfo);
+            }
         } else {
-            // 이메일로 회원 조회 (다른 제공자로 가입한 경우도 있음)
-            return createOrLinkMember(userInfo,registrationId);
+            // 새 회원 생성
+            log.info("새 회원 생성: email={}, provider={}",userInfo.getEmail(), registrationId);
+            return createNewMember(userInfo,registrationId);
         }
     }
 
@@ -54,30 +67,6 @@ public class MemberService {
         member.update(userInfo.getName(), userInfo.getImageUrl());
         return memberRepository.save(member);
     }
-
-    /**
-     * 이메일로 회원 조회 후 계정 연동 또는 새 회원 생성
-     * @param userInfo
-     * @param registrationId
-     * @return
-     */
-    private Member createOrLinkMember(OAuth2UserInfo userInfo, String registrationId) {
-        Optional<Member> memberByEmail = memberRepository.findByEmail(userInfo.getEmail());
-
-        if (memberByEmail.isPresent()) {
-            // 이메일이 같은 회원이 있으면 제공자 정보 업데이트(계정 연동)
-            log.info("기존 이메일로 계정 연동: email={}, provider={}", userInfo.getEmail(), registrationId);
-            Member member = memberByEmail.get();
-            // TODO: 계정 연동 로직 구현
-            
-            return memberRepository.save(member);
-        } else {
-            // 새 회원 생성
-            log.info("새 회원 생성: email={}, provider={}", userInfo.getEmail(), registrationId);
-            return createNewMember(userInfo, registrationId);
-        }
-    }
-
     /**
      * 새 회원 생성
      * @param userInfo
@@ -94,11 +83,12 @@ public class MemberService {
                 .nickname(nickname)
                 .profileImage(userInfo.getImageUrl())
                 .role("USER")
-                .provider(registrationId)
-                .providerId(userInfo.getId())
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
+
+        // OAuth 제공자 정보 추가
+        newMember.addOAuthId(registrationId,userInfo.getId());
 
         return memberRepository.save(newMember);
     }
@@ -139,5 +129,72 @@ public class MemberService {
         }
 
         return nickname.toString();
+    }
+
+    /**
+     * 회원 탈퇴 처리
+     * - 개인정보 익명화
+     * - 계정 비활성화 (soft delete)
+     * - OAuth 연동 정보 제거
+     *
+     * @param memberId 탈퇴할 회원 ID
+     * @return 처리 결과 (성공 여부)
+     */
+    public boolean withdrawMember(ObjectId memberId) {
+        Optional<Member> memberOpt = memberRepository.findById(memberId);
+
+        if (memberOpt.isEmpty()) {
+            log.warn("탈퇴 처리 실패: 존재하지 않는 회원 ID - {}", memberId);
+            return false;
+        }
+
+        Member member = memberOpt.get();
+
+        // 이미 탈퇴한 회원인지 확인
+        if (member.getDeletedAt() != null) {
+            log.warn("이미 탈퇴한 회원입니다: {}", memberId);
+            return false;
+        }
+
+        try {
+            // 1. 개인정보 익명화
+            anonymizePersonalData(member);
+
+            // 2. 계정 비활성화 (soft delete)
+            member.delete(); // Member 엔티티의 delete() 메서드 호출 (deletedAt 설정)
+
+            // 3. 회원 정보 저장
+            memberRepository.save(member);
+
+            log.info("회원 탈퇴 처리 완료: {}", memberId);
+            return true;
+        } catch (Exception e) {
+            log.error("회원 탈퇴 처리 중 오류 발생: {}", e.getMessage(), e);
+            return false;
+        }
+    }
+
+    /**
+     * 회원 개인정보 익명화 처리
+     * @param member 익명화할 회원
+     */
+    private void anonymizePersonalData(Member member) {
+        // 고유 식별자 생성 (UUID 뒷부분 8자리)
+        String anonymousId = UUID.randomUUID().toString().substring(24);
+
+        // 이메일 익명화 (이메일 형식 유지하면서 식별 불가능하게)
+        member.anonymizeEmail("withdrawn" + anonymousId + "@anonymous.com");
+
+        // 이름 익명화
+        member.anonymizeName("탈퇴회원");
+
+        // 닉네임 익명화 (중복 방지를 위해 고유 ID 포함)
+        member.updateNickname("탈퇴회원#" + anonymousId);
+
+        // 프로필 이미지 제거
+        member.removeProfileImage();
+
+        // OAuth 연동 정보 제거
+        member.clearOAuthIds();
     }
 }
