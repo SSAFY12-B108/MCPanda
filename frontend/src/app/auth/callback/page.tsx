@@ -11,10 +11,12 @@ export default function CallbackPage() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/me`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/members/me`, {
           method: "GET",
           credentials: "include", // ✅ 쿠키 포함해서 요청
         });
+
+        console.log(res)
 
         if (!res.ok) throw new Error("유저 정보를 불러오지 못했습니다");
 
