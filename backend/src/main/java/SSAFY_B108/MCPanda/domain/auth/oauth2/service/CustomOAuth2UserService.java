@@ -1,11 +1,10 @@
-package SSAFY_B108.MCPanda.global.oauth2.service;
+package SSAFY_B108.MCPanda.domain.auth.oauth2.service;
 
+import SSAFY_B108.MCPanda.domain.auth.oauth2.dto.CustomOAuth2User;
+import SSAFY_B108.MCPanda.domain.auth.oauth2.dto.OAuth2UserInfo;
+import SSAFY_B108.MCPanda.domain.auth.oauth2.dto.OAuth2UserInfoFactory;
 import SSAFY_B108.MCPanda.domain.member.entity.Member;
-import SSAFY_B108.MCPanda.domain.member.repository.MemberRepository;
 import SSAFY_B108.MCPanda.domain.member.service.MemberService;
-import SSAFY_B108.MCPanda.global.oauth2.dto.CustomOAuth2User;
-import SSAFY_B108.MCPanda.global.oauth2.dto.OAuth2UserInfo;
-import SSAFY_B108.MCPanda.global.oauth2.dto.OAuth2UserInfoFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
@@ -15,10 +14,8 @@ import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  *  OAuth2 인증 후 사용자 정보를 로드하는 서비스

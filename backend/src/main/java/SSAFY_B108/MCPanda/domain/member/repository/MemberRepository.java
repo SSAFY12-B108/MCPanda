@@ -21,18 +21,6 @@ public interface MemberRepository extends MongoRepository<Member, ObjectId> {
     Optional<Member> findByEmail(String email);
 
     /**
-     * 이메일과 제공자로 회원 조회
-     */
-    @Query("{ 'email': ?0, 'provider': ?1, 'deleted_at': null }")
-    Optional<Member> findByEmailAndProvider(String email, String provider);
-
-    /**
-     * 제공자 ID와 제공자로 회원 조회
-     */
-    @Query("{ 'providerId': ?0, 'provider': ?1, 'deleted_at': null }")
-    Optional<Member> findByProviderIdAndProvider(String providerId, String provider);
-
-    /**
      * 닉네임으로 회원 조회
      */
     @Query("{ 'nickname': ?0, 'deleted_at': null }")
@@ -49,12 +37,6 @@ public interface MemberRepository extends MongoRepository<Member, ObjectId> {
      */
     @Query("{ 'liked_posts': ?0, 'deleted_at': null }")
     List<Member> findByLikedPostsContaining(ObjectId postId);
-
-    /**
-     * 특정 기간 이후에 가입한 회원 목록 조회
-     */
-    @Query("{ 'created_at': { $gte: ?0 }, 'deleted_at': null }")
-    List<Member> findByCreatedAtAfter(LocalDateTime date);
 
     /**
      * 소프트 삭제된 회원 조회

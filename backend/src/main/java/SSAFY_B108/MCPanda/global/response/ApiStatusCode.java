@@ -6,7 +6,7 @@ import lombok.Getter;
  * API 응답 상태 코드를 관리하는 열거형
  */
 @Getter
-public enum StatusCode {
+public enum ApiStatusCode {
     // 성공 코드 (2xx)
     OK(200, "성공적으로 처리되었습니다."),
     CREATED(201, "리소스가 성공적으로 생성되었습니다."),
@@ -25,7 +25,7 @@ public enum StatusCode {
     private final int code;
     private final String message;
 
-    StatusCode(int code, String message) {
+    ApiStatusCode(int code, String message) {
         this.code = code;
         this.message = message;
     }

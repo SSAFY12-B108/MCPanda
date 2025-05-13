@@ -20,6 +20,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import SSAFY_B108.MCPanda.domain.article.repository.MCPRepository;
+import SSAFY_B108.MCPanda.domain.article.entity.MCP;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -27,20 +29,25 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.Map;
+import java.util.HashMap;
 
 @Service
 public class ArticleService {
 
     private final ArticleRepository articleRepository;
     private final RecommendationRepository recommendationRepository;
+    private final MCPRepository mcpRepository;
     private static final DateTimeFormatter ISO_DATE_TIME_FORMATTER = DateTimeFormatter.ISO_DATE_TIME;
     private static final DateTimeFormatter LOCAL_DATE_TIME_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
     @Autowired
     public ArticleService(ArticleRepository articleRepository,
-                          RecommendationRepository recommendationRepository) {
+                          RecommendationRepository recommendationRepository,
+                          MCPRepository mcpRepository) {
         this.articleRepository = articleRepository;
         this.recommendationRepository = recommendationRepository;
+        this.mcpRepository = mcpRepository;
     }
 
     /**
@@ -59,7 +66,15 @@ public class ArticleService {
         Article newArticle = new Article();
         newArticle.setTitle(requestDto.getTitle());
         newArticle.setContent(requestDto.getContent());
-        newArticle.setMcps(requestDto.getMcps());
+        
+        // MCP 이름만 저장하고 실제 내용은 조회 시 DB에서 가져옴
+        Map<String, Object> mcpNames = new HashMap<>();
+        if (requestDto.getMcps() != null) {
+            for (String key : requestDto.getMcps().keySet()) {
+                mcpNames.put(key, true);
+            }
+        }
+        newArticle.setMcps(mcpNames);
 
         newArticle.setAuthor(author); // 작성자 정보 설정
         newArticle.setCreatedAt(LocalDateTime.now()); // 현재 시간으로 생성일시 설정
@@ -79,7 +94,33 @@ public class ArticleService {
      */
     @Transactional(readOnly = true)
     public Optional<Article> findArticleById(String articleId) {
-        return articleRepository.findById(articleId);
+        Optional<Article> articleOpt = articleRepository.findById(articleId);
+        
+        if (articleOpt.isPresent()) {
+            Article article = articleOpt.get();
+            
+            // MCP 정보를 DB에서 로드하여 설정
+            Map<String, Object> mcpsMap = article.getMcps();
+            if (mcpsMap != null && !mcpsMap.isEmpty()) {
+                Map<String, Object> enrichedMcps = new HashMap<>();
+                
+                // mcps 맵의 각 키(MCP 이름)에 대해 DB에서 MCP 정보 조회
+                for (String mcpName : mcpsMap.keySet()) {
+                    Optional<MCP> mcpOpt = mcpRepository.findByName(mcpName);
+                    if (mcpOpt.isPresent()) {
+                        MCP mcp = mcpOpt.get();
+                        enrichedMcps.put(mcpName, mcp.getMcpServers());
+                    }
+                }
+                
+                // 기존 mcps를 DB에서 조회한 정보로 대체
+                article.setMcps(enrichedMcps);
+            }
+            
+            return Optional.of(article);
+        }
+        
+        return articleOpt;
     }
 
     /**
@@ -194,10 +235,6 @@ public class ArticleService {
         }
         if (requestDto.getContent() != null && !requestDto.getContent().equals(existingArticle.getContent())) {
             existingArticle.setContent(requestDto.getContent());
-            needsUpdate = true;
-        }
-        if (requestDto.getMcps() != null && !requestDto.getMcps().equals(existingArticle.getMcps())) {
-            existingArticle.setMcps(requestDto.getMcps());
             needsUpdate = true;
         }
 
