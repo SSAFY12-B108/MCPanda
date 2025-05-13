@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
@@ -21,7 +22,9 @@ import java.io.IOException;
 @Component
 @RequiredArgsConstructor
 public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
-    
+    @Value("${app.frontend.url}")
+    private String frontendUrl;
+
     private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenService refreshTokenService;
     
@@ -42,9 +45,10 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
         // RefreshToken 저장
         refreshTokenService.saveRefreshToken(memberId, refreshToken);
 
-        // AccessToken을 HttpOnly 쿠키로 설정
+        // AccessToken HttpOnly 쿠키로 설정
         refreshTokenService.setAccessTokenCookie(response, accessToken);
-        // RefreshToken을 HttpOnly 쿠키로 설정
+
+        // RefreshToken HttpOnly 쿠키로 설정
         refreshTokenService.setRefreshTokenCookie(response, refreshToken);
 
         // 프론트엔드 리다이렉트 URL 설정
@@ -56,11 +60,10 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 
     /**
      *  리다이렉트 URL 결정
-     *  실제 프로젝트에서는 프론트엔드 URL로 변경
      */
     @Override
     protected String determineTargetUrl(HttpServletRequest request, HttpServletResponse response) {
         // 기본 URL (홈페이지)
-        return "/";
+        return frontendUrl + "/auth/callback";
     }
 }
