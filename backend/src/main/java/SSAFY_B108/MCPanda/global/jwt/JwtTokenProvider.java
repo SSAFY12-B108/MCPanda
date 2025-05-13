@@ -151,9 +151,6 @@ public class JwtTokenProvider {
             }
         } catch (Exception e) {
             log.error("Member ID 변환 오류: {}", e.getMessage());
-            // 여기서 ID로 찾지 못할 경우 대안으로 이메일이나 닉네임으로 시도해볼 수 있음
-            // Optional<Member> memberByEmail = memberRepository.findByEmail(memberId);
-            // if (memberByEmail.isPresent()) { return new ... }
         }
         
         // 모든 시도가 실패하면 기본 Authentication 반환 (또는 요구사항에 따라 null도 가능)
@@ -185,9 +182,9 @@ public class JwtTokenProvider {
      * @param token JWT 토큰
      * @return 사용자 이름
      */
-    public String getUsernameFromToken(String token) {
+    public String getMemberIdFromToken(String token) {
         try {
-            // 토큰에서 사용자 이름 추출
+            // 토큰에서 memberId 추출
             return Jwts.parserBuilder()
                     .setSigningKey(key)
                     .build()
