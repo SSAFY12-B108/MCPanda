@@ -4,17 +4,21 @@ import { Comment } from "@/hooks/useArticle";
 import { useDateFormat } from "@/hooks/useDateFormat";
 import { useAddComment, useDeleteComment } from "@/hooks/useComment";
 import { useParams, useRouter } from "next/navigation";
+import useAuthStore from "@/stores/authStore"; // Import useAuthStore
 
 interface CommentSectionProps {
   comments?: Comment[] | null; // null이나 undefined도 허용
-  currentUserId?: string;
 }
 
-export default function CommentSection({ comments = [], currentUserId }: CommentSectionProps) {
+// Remove currentUserId from props
+export default function CommentSection({ comments = [] }: CommentSectionProps) {
   const { id: articleId } = useParams<{ id: string }>();
   const router = useRouter();
   const [newComment, setNewComment] = useState("");
   const { formatDate } = useDateFormat();
+  
+  // Get isLoggedIn from authStore
+  const { isLoggedIn, user } = useAuthStore();
   
   // TanStack Query 훅 사용
   const addCommentMutation = useAddComment(articleId);
@@ -22,7 +26,7 @@ export default function CommentSection({ comments = [], currentUserId }: Comment
   
   // 로그인 체크 및 리다이렉트 함수
   const checkLoginAndProceed = (callback: () => void) => {
-    if (!currentUserId) {
+    if (!isLoggedIn) { // Use isLoggedIn
       const confirmLogin = window.confirm("로그인이 필요한 서비스입니다. 로그인 페이지로 이동하시겠습니까?");
       
       if (confirmLogin) {
@@ -79,7 +83,7 @@ export default function CommentSection({ comments = [], currentUserId }: Comment
         <textarea
           className="w-full p-4 border border-gray-200 rounded-md resize-none focus:outline-none focus:border-blue-500 transition"
           rows={4}
-          placeholder={currentUserId ? "댓글을 작성하세요. (Ctrl + Enter로 등록)" : "로그인 후 댓글을 작성할 수 있습니다."}
+          placeholder={isLoggedIn ? "댓글을 작성하세요. (Ctrl + Enter로 등록)" : "로그인 후 댓글을 작성할 수 있습니다."} // Use isLoggedIn
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
           onKeyDown={handleKeyPress}
@@ -88,7 +92,7 @@ export default function CommentSection({ comments = [], currentUserId }: Comment
           <button
             className="bg-blue-500 text-white px-4 py-2 rounded-md cursor-pointer disabled:opacity-50 hover:bg-blue-600 transition"
             onClick={handleCommentSubmit}
-            disabled={!newComment.trim() || addCommentMutation.isPending}
+            disabled={!newComment.trim() || addCommentMutation.isPending || !isLoggedIn} // Disable if not logged in
           >
             {addCommentMutation.isPending ? "등록 중..." : "등록"}
           </button>
@@ -109,7 +113,8 @@ export default function CommentSection({ comments = [], currentUserId }: Comment
                 <p className="font-bold">{comment.author?.nickname || '익명'}</p>
                 <div className="flex items-center gap-3">
                   {/* memberId 필드 유지: 현재 사용자의 ID와 비교 */}
-                  {comment.author?.memberId === currentUserId && (
+                  {/* Use user?._id for comparison */}
+                  {isLoggedIn && comment.author?.memberId === user?._id && (
                     <button 
                       className="text-gray-500 text-sm hover:text-red-500 transition"
                       onClick={() => handleDeleteComment(comment.id || '')}
