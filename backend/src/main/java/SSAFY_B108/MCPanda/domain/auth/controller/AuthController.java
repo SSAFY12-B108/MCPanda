@@ -18,31 +18,11 @@ import java.util.Map;
 public class AuthController {
 
     private final TokenService tokenService;
-    private final RefreshTokenService refreshTokenService; // For setting cookies
-
-
-    @GetMapping("/login")
-    public ResponseEntity<Map<String,String>> login() {
-        return ResponseEntity.ok(Map.of(
-                "message", "OAuth2 로그인 페이지입니다.",
-                "google_auth_url", "/api/auth/oauth2/authorization/google", // Adjusted path to be relative to frontend or gateway
-                "github_auth_url", "/api/auth/oauth2/authorization/github"  // Adjusted path
-        ));
-    }
+    private final RefreshTokenService refreshTokenService;
 
     @GetMapping("/logout")
     public ResponseEntity<Map<String,String>> logout() {
         return ResponseEntity.ok(Map.of("message", "로그아웃에 성공했습니다."));
-    }
-
-    @GetMapping("/success")
-    public ResponseEntity<Map<String,String>> success() {
-        return ResponseEntity.ok(Map.of("message","로그인에 성공했습니다. 토큰이 발급되었습니다."));
-    }
-
-    @GetMapping("/failure")
-    public ResponseEntity<Map<String,String>> failure() {
-        return ResponseEntity.status(401).body(Map.of("message","로그인에 실패했습니다."));
     }
 
     /**
