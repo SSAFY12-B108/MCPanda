@@ -3,11 +3,11 @@ import McpCodeSection from "@/components/community/McpCodeSection";
 import CommentSection from "@/components/community/CommentSection";
 import Header from "@/components/Layout/Header";
 import Chatbot from '@/components/Layout/Chatbot';
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useArticleDetail, useRecommendArticle, useDeleteArticle } from "@/hooks/useArticle";
 import { useDateFormat } from "@/hooks/useDateFormat";
-// import { useAuth } from "@/hooks/useAuth"; // 인증 정보를 가져오는 훅 추가 (적절한 경로로 수정 필요)
+import useAuthStore from "@/stores/authStore";
 
 export default function Page() {
   const router = useRouter();
@@ -15,7 +15,7 @@ export default function Page() {
   const articleId = params.id as string;
   
   // 현재 로그인한 사용자 정보 가져오기
-  // const { user, isAuthenticated } = useAuth(); // 인증 상태 및 사용자 정보
+  const { user, isLoggedIn } = useAuthStore();
   
   // TanStack Query를 사용하여 게시글 데이터 가져오기
   const { data: article, isLoading, isError } = useArticleDetail(articleId);
@@ -29,18 +29,9 @@ export default function Page() {
   // 삭제 관련 Mutation
   const deleteMutation = useDeleteArticle();
   
-  // 로컬 상태 (추천 여부)
-  const [isRecommended, setIsRecommended] = useState(false);
-
   // 작성자 체크 (현재 로그인한 사용자가 글 작성자인지 확인)
-  // const isAuthor = user && article && article.author.memberId === user.id;
+  const isAuthor = user && article && article.author?.memberId === user._id;
   
-  useEffect(() => {
-    // 로컬 스토리지에서 추천 여부 확인
-    const recommendedArticles = JSON.parse(localStorage.getItem('recommendedArticles') || '{}');
-    setIsRecommended(!!recommendedArticles[articleId]);
-  }, [articleId]);
-
   const handleCopyUrl = () => {
     navigator.clipboard.writeText(window.location.href);
     alert("페이지 URL이 복사되었습니다.");
@@ -48,29 +39,13 @@ export default function Page() {
 
   const handleRecommendClick = () => {
     // 로그인 체크
-    // if (!isAuthenticated) {
-    //   const confirmLogin = window.confirm("로그인이 필요한 서비스입니다. 로그인 페이지로 이동하시겠습니까?");
-    //   if (confirmLogin) {
-    //     router.push("/auth/login");
-    //   }
-    //   return;
-    // }
-    
-    // 로그인 상태일 때만 추천 처리
-    // 추천 상태 토글
-    const newIsRecommended = !isRecommended;
-    
-    // 로컬 스토리지 업데이트
-    const recommendedArticles = JSON.parse(localStorage.getItem('recommendedArticles') || '{}');
-    if (newIsRecommended) {
-      recommendedArticles[articleId] = true;
-    } else {
-      delete recommendedArticles[articleId];
+    if (!isLoggedIn) {
+      const confirmLogin = window.confirm("로그인이 필요한 서비스입니다. 로그인 페이지로 이동하시겠습니까?");
+      if (confirmLogin) {
+        router.push("/auth/login");
+      }
+      return;
     }
-    localStorage.setItem('recommendedArticles', JSON.stringify(recommendedArticles));
-    
-    // 로컬 UI 업데이트
-    setIsRecommended(newIsRecommended);
     
     // API 호출
     recommendMutation.mutate();
@@ -103,20 +78,20 @@ export default function Page() {
         <div className="flex justify-between items-center">
           <div className="flex items-center">
             <h1 className="text-2xl font-bold">{article.title}</h1>
-            {article.isNotice && (
+            {article.notice && (
               <div className="ml-2 text-[#0095FF] bg-[#E1F3FF] rounded-md px-2 py-1 text-sm">
                 공지
               </div>
             )}
           </div>
           {/* 작성자인 경우에만 수정/삭제 버튼 표시 */}
-          {/* {isAuthor && ( */}
+          {isAuthor && (
             <div>
               <button className="text-gray-500" onClick={handleEdit}>수정</button>
               <span className="mx-1 text-gray-500">|</span>
               <button className="text-gray-500" onClick={handleDelete}>삭제</button>
             </div>
-          {/* )} */}
+          )}
         </div>
         
         <div className="mt-2 text-[#888A8C] flex">
@@ -144,14 +119,14 @@ export default function Page() {
         <div className="mt-5 flex justify-end space-x-4">
           <button
             className={`w-24 px-4 py-2 rounded-full border ${
-              isRecommended
+              article?.isLiked
                 ? 'bg-[#0095FF] text-white border-[#0095FF]'
                 : 'text-[#0095FF] border-[#0095FF]'
             }`}
             onClick={handleRecommendClick}
-            // title={!isAuthenticated ? "로그인 후 추천할 수 있습니다" : ""}
+            title={!isLoggedIn ? "로그인 후 추천할 수 있습니다" : ""}
           >
-            👍 {article.recommendCount}
+            👍 {article?.recommendCount}
           </button>
           <button
             className="w-24 px-4 py-2 rounded-full border border-[#888888] text-[#888888]"
@@ -162,8 +137,7 @@ export default function Page() {
         </div>
 
         {/* 댓글 섹션 */}
-        {/* <CommentSection comments={article.comments} currentUserId={user?.id} /> */}
-        <CommentSection comments={article.comments} />
+        <CommentSection comments={article?.comments} currentUserId={user?._id} />
       </div>
 
       <Chatbot/>
