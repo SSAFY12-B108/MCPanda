@@ -3,7 +3,7 @@ import McpCodeSection from "@/components/community/McpCodeSection";
 import CommentSection from "@/components/community/CommentSection";
 import Header from "@/components/Layout/Header";
 import Chatbot from '@/components/Layout/Chatbot';
-import React from "react";
+import React, { useEffect } from "react"; // Import useEffect
 import { useRouter, useParams } from "next/navigation";
 import { useArticleDetail, useRecommendArticle, useDeleteArticle } from "@/hooks/useArticle";
 import { useDateFormat } from "@/hooks/useDateFormat";
@@ -137,7 +137,7 @@ export default function Page() {
         </div>
 
         {/* 댓글 섹션 */}
-        <CommentSection comments={article?.comments} currentUserId={user?._id} />
+        <CommentSection comments={article?.comments} />
       </div>
 
       <Chatbot/>
