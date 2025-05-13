@@ -2,10 +2,10 @@
 interface ContentCardProps {
     title: string;
     tags: string[];
-    likes: number;
+    recommendCount: number;
 }
 
-const CombinationBox: React.FC<ContentCardProps> = ({ title, tags, likes }) => {
+const CombinationBox: React.FC<ContentCardProps> = ({ title, tags, recommendCount }) => {
     return (
         <div className=" w-[200px] rounded-xl border border-gray-200 shadow-sm p-3 bg-white">
             <h2 className="text-sm font-medium text-gray-900 mb-4">{title}</h2>
@@ -27,7 +27,7 @@ const CombinationBox: React.FC<ContentCardProps> = ({ title, tags, likes }) => {
                 </div>
                 <div className="flex  text-sm text-gray-700 items-end">
                     👍
-                    <span>{likes}</span>
+                    <span>{recommendCount}</span>
                 </div>
             </div>
         </div>
