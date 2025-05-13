@@ -22,6 +22,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import SSAFY_B108.MCPanda.domain.article.repository.MCPRepository;
 import SSAFY_B108.MCPanda.domain.article.entity.MCP;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.domain.PageImpl;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -31,6 +35,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.regex.Pattern;
 
 @Service
 public class ArticleService {
@@ -38,16 +43,19 @@ public class ArticleService {
     private final ArticleRepository articleRepository;
     private final RecommendationRepository recommendationRepository;
     private final MCPRepository mcpRepository;
+    private final MongoTemplate mongoTemplate;
     private static final DateTimeFormatter ISO_DATE_TIME_FORMATTER = DateTimeFormatter.ISO_DATE_TIME;
     private static final DateTimeFormatter LOCAL_DATE_TIME_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
     @Autowired
     public ArticleService(ArticleRepository articleRepository,
                           RecommendationRepository recommendationRepository,
-                          MCPRepository mcpRepository) {
+                          MCPRepository mcpRepository,
+                          MongoTemplate mongoTemplate) {
         this.articleRepository = articleRepository;
         this.recommendationRepository = recommendationRepository;
         this.mcpRepository = mcpRepository;
+        this.mongoTemplate = mongoTemplate;
     }
 
     /**
@@ -124,42 +132,137 @@ public class ArticleService {
     }
 
     /**
-     * 게시글 전체 목록을 조회합니다. (검색, 정렬, 페이징 기능 포함)
+     * 게시글 전체 목록을 조회합니다. (검색, 정렬, 페이징, MCP 카테고리 필터링 기능 포함)
      *
      * @param search 검색어 (제목 또는 내용 대상)
      * @param type 정렬 타입 ("latest" 또는 "recommend")
+     * @param mcpCategory MCP 카테고리 (Backend, Frontend, Infrastructure, Others)
      * @param page 페이지 번호 (0부터 시작)
      * @param size 페이지 당 게시글 수
      * @return 페이징 처리된 게시글 목록 응답 DTO
      */
     @Transactional(readOnly = true)
-    public ArticlePageResponseDto findAllArticles(String search, String type, int page, int size) {
-        // 1. 정렬 조건 설정
-        Sort sort = Sort.by("createdAt").descending(); // 기본값: 최신순
-        if ("recommend".equalsIgnoreCase(type)) {
+    public ArticlePageResponseDto findAllArticles(String search, String type, String mcpCategory, int page, int size) {
+        // 1. 정렬 조건 설정 (기본값: 추천순)
+        Sort sort;
+        if ("latest".equalsIgnoreCase(type)) {
+            sort = Sort.by("createdAt").descending();
+        } else {
+            // 기본은 recommend(추천순)
             sort = Sort.by("recommendCount").descending().and(Sort.by("createdAt").descending());
         }
 
-        // 2. Pageable 객체 생성 (페이지 번호는 0부터 시작하므로 page-1)
+        // 2. Pageable 객체 생성
         Pageable pageable = PageRequest.of(page > 0 ? page - 1 : 0, size, sort);
 
-        // 3. 검색 조건에 따른 데이터 조회
+        // MCP 디버깅 정보 출력
+        System.out.println("===== MCP 전체 목록 =====");
+        List<MCP> allMcps = mcpRepository.findAll();
+        allMcps.forEach(mcp -> System.out.println("MCP: " + mcp.getName() + ", 카테고리: " + mcp.getCategory()));
+        System.out.println("========================");
+
+        // 3. 검색 조건 구성
         Page<Article> articlePage;
-        if (search != null && !search.trim().isEmpty()) {
-            // TODO: ArticleRepository에 검색을 위한 메소드 추가 필요
-            articlePage = articleRepository.findAll(pageable); // 현재는 검색 미구현
+        
+        if (mcpCategory != null && !mcpCategory.trim().isEmpty()) {
+            // 카테고리명 정규화
+            String searchCategory = mcpCategory.trim();
+            System.out.println("요청된 카테고리: " + searchCategory);
+            
+            // 카테고리 값 변환 추가 - 실제 DB에 어떻게 저장되어 있는지에 따라 조정 필요
+            // 모든 가능한 형태의 카테고리를 처리
+            List<String> possibleCategories = new ArrayList<>();
+            possibleCategories.add(searchCategory);
+            
+            if (searchCategory.equalsIgnoreCase("infra")) {
+                possibleCategories.add("Infrastructure");
+                possibleCategories.add("INFRA");
+                possibleCategories.add("INFRASTRUCTURE");
+                possibleCategories.add("Infra");
+            }
+            
+            if (searchCategory.equalsIgnoreCase("frontend")) {
+                possibleCategories.add("Front-end");
+                possibleCategories.add("FRONTEND");
+                possibleCategories.add("Front");
+            }
+            
+            if (searchCategory.equalsIgnoreCase("backend")) {
+                possibleCategories.add("Back-end");
+                possibleCategories.add("BACKEND");
+                possibleCategories.add("Back");
+            }
+            
+            System.out.println("검색할 카테고리들: " + possibleCategories);
+            
+            // 모든 가능한 카테고리로 MCP 검색
+            List<MCP> mcpsInCategory = new ArrayList<>();
+            for (String category : possibleCategories) {
+                List<MCP> mcps = mcpRepository.findByCategoryIgnoreCase(category);
+                mcpsInCategory.addAll(mcps);
+            }
+            
+            // 디버깅: 카테고리와 찾은 MCP 출력
+            System.out.println("찾은 MCP 개수: " + mcpsInCategory.size());
+            mcpsInCategory.forEach(mcp -> System.out.println("MCP: " + mcp.getName() + ", 카테고리: " + mcp.getCategory()));
+            
+            if (!mcpsInCategory.isEmpty()) {
+                // 여러 MCP가 있을 경우 쿼리 구성
+                Criteria criteria = new Criteria();
+                List<Criteria> orCriteria = new ArrayList<>();
+                
+                // 각 MCP별 조건 생성
+                for (MCP mcp : mcpsInCategory) {
+                    String fieldPath = "mcps." + mcp.getName();
+                    orCriteria.add(Criteria.where(fieldPath).exists(true));
+                    System.out.println("검색 조건 추가: " + fieldPath);
+                }
+                
+                // $or 조건 추가
+                if (!orCriteria.isEmpty()) {
+                    criteria = new Criteria().orOperator(orCriteria.toArray(new Criteria[0]));
+                }
+                
+                // 검색어 조건 추가
+                if (search != null && !search.trim().isEmpty()) {
+                    Pattern pattern = Pattern.compile(search, Pattern.CASE_INSENSITIVE);
+                    criteria = new Criteria().andOperator(
+                        criteria,
+                        new Criteria().orOperator(
+                            Criteria.where("title").regex(pattern),
+                            Criteria.where("content").regex(pattern)
+                        )
+                    );
+                }
+                
+                // 쿼리 생성 및 실행
+                Query query = new Query(criteria).with(pageable);
+                List<Article> articles = mongoTemplate.find(query, Article.class);
+                long totalCount = mongoTemplate.count(Query.of(query).limit(0).skip(0), Article.class);
+                
+                System.out.println("검색 결과 게시글 수: " + articles.size());
+                
+                articlePage = new PageImpl<>(articles, pageable, totalCount);
+            } else {
+                // 카테고리에 해당하는 MCP가 없는 경우
+                System.out.println("해당 카테고리의 MCP를 찾을 수 없음");
+                articlePage = Page.empty(pageable);
+            }
+        } else if (search != null && !search.trim().isEmpty()) {
+            // 검색어로만 검색
+            articlePage = articleRepository.findByTitleOrContentContaining(search, pageable);
         } else {
+            // 모든 게시글 조회
             articlePage = articleRepository.findAll(pageable);
         }
 
-        // 4. 조회된 Article 엔티티들을 ArticleListInfoResponseDto로 변환
+        // 4. 결과 변환 및 반환
         List<ArticleListInfoResponseDto> articleDtos = articlePage.getContent().stream()
                 .map(this::convertToArticleListInfoResponseDto)
                 .collect(Collectors.toList());
 
-        // 5. 최종 응답 DTO 생성
         return new ArticlePageResponseDto(
-                articlePage.getNumber() + 1, // 클라이언트에게는 페이지 번호를 1부터 시작하는 것으로 전달
+                articlePage.getNumber() + 1,
                 articlePage.getTotalPages(),
                 articlePage.getTotalElements(),
                 articleDtos

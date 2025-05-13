@@ -1,6 +1,7 @@
 package SSAFY_B108.MCPanda.domain.member.controller;
 
 import SSAFY_B108.MCPanda.domain.member.dto.MemberResponseDto;
+import SSAFY_B108.MCPanda.domain.member.entity.Member;
 import SSAFY_B108.MCPanda.domain.member.service.MemberService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,6 +11,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -28,11 +31,14 @@ public class MemberController {
             return ResponseEntity.status(401).build();
         }
 
-        String email = authentication.getName();
-        log.info("현재 인증된 사용자: {}", email);
+        Object principal = authentication.getPrincipal();
+        log.info("Principal 타입: {}", principal.getClass().getName());
+
+        Member memberPrincipal = (Member) principal;
+        String email = memberPrincipal.getEmail();
+        log.info("Principal에서 Member 이메일 추출: {}", email);
 
         MemberResponseDto memberDto = memberService.getMemberByEmail(email);
-
         return ResponseEntity.ok(memberDto);
     }
 }
