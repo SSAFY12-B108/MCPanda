@@ -6,6 +6,7 @@ import Header from "@/components/Layout/Header";
 import Chatbot from "@/components/Layout/Chatbot";
 import ArticleItem from "@/components/community/ArticleItem";
 import { useArticleQuery, ArticlesParams } from "@/hooks/useArticle";
+import Link from "next/link";
 import Image from "next/image";
 import pandaImage from "@/images/community-panda.png";
 
@@ -113,30 +114,46 @@ export default function CommunityClient() {
           </button>
         </div>
 
-        {/* 최신순 | 추천순 필터 */}
+        {/* 최신순 | 추천순 필터 및 글 작성 버튼 */}
         <div
-          className="flex items-center mt-[25px] text-[1rem]"
+          className="flex items-center justify-between mt-[25px] text-[1rem]"
           style={{ color: "#6B7280" }}
         >
-          <span
-            className="cursor-pointer"
-            style={{
-              color: queryParams.type === "latest" ? "#1E88E5" : undefined,
-            }}
-            onClick={() => handleTypeChange("latest")}
-          >
-            최신순
-          </span>
-          <span className="mx-2">|</span>
-          <span
-            className="cursor-pointer"
-            style={{
-              color: queryParams.type === "recommend" ? "#1E88E5" : undefined,
-            }}
-            onClick={() => handleTypeChange("recommend")}
-          >
-            추천순
-          </span>
+          <div className="flex items-center">
+            <span
+              className="cursor-pointer"
+              style={{
+                color: queryParams.type === "latest" ? "#1E88E5" : undefined,
+              }}
+              onClick={() => handleTypeChange("latest")}
+            >
+              최신순
+            </span>
+            <span className="mx-2">|</span>
+            <span
+              className="cursor-pointer"
+              style={{
+                color: queryParams.type === "recommend" ? "#1E88E5" : undefined,
+              }}
+              onClick={() => handleTypeChange("recommend")}
+            >
+              추천순
+            </span>
+          </div>
+          {/* 글 작성 버튼 */}
+          <Link href="/community/write">
+            <button style={{
+              padding: '8px 12px',
+              backgroundColor: '#1E88E5',
+              color: 'white',
+              textDecoration: 'none',
+              borderRadius: '5px',
+              fontSize: '0.9rem',
+              cursor: 'pointer'
+            }}>
+              글 작성하기
+            </button>
+          </Link>
         </div>
 
         {/* 게시글 목록 */}
