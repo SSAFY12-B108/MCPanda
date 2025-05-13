@@ -45,13 +45,19 @@ export default function Write() {
   };
 
   // 작성하기 버튼 클릭 시 호출되는 함수
-  const createArticle = useMutation({
+const createArticle = useMutation({
   mutationFn: async () => {
+    const mcpsObject = selectedTools.reduce((acc, tool) => {
+      acc[tool] = "true"; // ✅ 문자열 "true"
+      return acc;
+    }, {} as Record<string, string>);
+
     const response = await axios.post("/api/articles", {
       title,
       content,
-      mcps: selectedTools,
+      mcps: mcpsObject,
     });
+
     return response.data;
   },
   onSuccess: () => {
@@ -60,8 +66,8 @@ export default function Write() {
   },
   onError: () => {
     alert("업로드에 실패했습니다.");
-    console.log(title, content, selectedTools)
-    console.log('게시글 업로드 실패',errors)
+    console.log(title, content, selectedTools);
+    console.log('게시글 업로드 실패', errors);
   },
 });
 
