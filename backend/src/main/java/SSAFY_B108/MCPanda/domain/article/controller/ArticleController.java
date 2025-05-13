@@ -100,17 +100,18 @@ public class ArticleController {
 
     @Operation(
             summary = "게시글 전체 목록 조회",
-            description = "게시글 전체 목록을 검색, 정렬, 페이징하여 조회합니다."
+            description = "게시글 전체 목록을 검색, 정렬, 페이징, MCP 카테고리로 필터링하여 조회합니다."
     )
     @ApiResponses(value = { /* ... */ })
     @GetMapping
     public ResponseEntity<ArticlePageResponseDto> findAllArticles(
             @RequestParam(required = false) String search,
-            @RequestParam(defaultValue = "latest") String type,
+            @RequestParam(defaultValue = "recommend") String type,
+            @RequestParam(required = false) String mcpCategory,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        ArticlePageResponseDto articlePageResponseDto = articleService.findAllArticles(search, type, page, size);
+        ArticlePageResponseDto articlePageResponseDto = articleService.findAllArticles(search, type, mcpCategory, page, size);
         return ResponseEntity.ok(articlePageResponseDto);
     }
 
