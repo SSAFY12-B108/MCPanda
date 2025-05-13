@@ -58,6 +58,7 @@ export interface ArticleListItem extends ArticleBase {
 export interface ArticleDetail extends ArticleBase {
   mcps: Mcps;
   comments: Comment[];
+  isLiked: boolean; // isLiked 속성 추가
 }
 
 // API 응답 타입
@@ -143,17 +144,13 @@ export const useRecommendArticle = (articleId: string) => {
       const currentArticle = queryClient.getQueryData<ArticleDetail>(['article', articleId]);
       
       if (currentArticle) {
-        // 응답 데이터의 recommendCount로 업데이트
+        // 응답 데이터의 recommendCount와 isLiked로 업데이트
         queryClient.setQueryData<ArticleDetail>(['article', articleId], {
           ...currentArticle,
-          recommendCount: data.recommendCount
+          recommendCount: data.recommendCount,
+          isLiked: data.isLiked,
         });
       }
-      
-      // 추천 상태 업데이트 (UI에서 버튼 상태 표시용)
-      queryClient.setQueryData(['articleRecommendStatus', articleId], {
-        isLiked: data.isLiked
-      });
       
       // 목록 페이지의 캐시된 데이터도 업데이트
       const articlesQueries = queryClient.getQueriesData<ArticlesResponse>({ 
@@ -183,18 +180,6 @@ export const useRecommendArticle = (articleId: string) => {
       console.error('추천 처리 중 오류 발생:', error);
       // 오류 발생 시 사용자에게 알림 표시 등의 처리 가능
     }
-  });
-};
-
-// 게시글 추천 상태를 조회하는 훅
-export const useArticleRecommendStatus = (articleId: string) => {
-  return useQuery({
-    queryKey: ['articleRecommendStatus', articleId],
-    queryFn: async () => {
-      const { data } = await apiClient.get<{ isLiked: boolean }>(`/articles/${articleId}/recommends/status`);
-      return data;
-    },
-    staleTime: 1000 * 60 * 5, // 5분 동안 캐시
   });
 };
 
