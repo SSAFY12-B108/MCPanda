@@ -34,11 +34,11 @@ public class ArticleUpdateRequestDto {
     public void setContent(String content) {
         this.content = content;
     }
-
+    
     public Map<String, Object> getMcps() {
         return mcps;
     }
-
+    
     public void setMcps(Map<String, Object> mcps) {
         this.mcps = mcps;
     }

@@ -1,20 +1,20 @@
 package SSAFY_B108.MCPanda.global.exception;
 
-import SSAFY_B108.MCPanda.global.response.StatusCode;
+import SSAFY_B108.MCPanda.global.response.ApiStatusCode;
 import lombok.Getter;
 
 @Getter
 public class CustomException extends RuntimeException {
     
-    private final StatusCode statusCode;
+    private final ApiStatusCode apiStatusCode;
     
-    public CustomException(StatusCode statusCode) {
-        super(statusCode.getMessage());
-        this.statusCode = statusCode;
+    public CustomException(ApiStatusCode apiStatusCode) {
+        super(apiStatusCode.getMessage());
+        this.apiStatusCode = apiStatusCode;
     }
     
-    public CustomException(StatusCode statusCode, String message) {
+    public CustomException(ApiStatusCode apiStatusCode, String message) {
         super(message);
-        this.statusCode = statusCode;
+        this.apiStatusCode = apiStatusCode;
     }
 } 
