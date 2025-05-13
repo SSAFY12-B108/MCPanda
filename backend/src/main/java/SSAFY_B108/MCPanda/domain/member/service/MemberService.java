@@ -1,5 +1,6 @@
 package SSAFY_B108.MCPanda.domain.member.service;
 
+import SSAFY_B108.MCPanda.domain.member.dto.MemberResponseDto;
 import SSAFY_B108.MCPanda.domain.member.entity.Member;
 import SSAFY_B108.MCPanda.domain.member.repository.MemberRepository;
 import SSAFY_B108.MCPanda.domain.auth.oauth2.dto.OAuth2UserInfo;
@@ -9,6 +10,8 @@ import org.bson.types.ObjectId;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -131,70 +134,33 @@ public class MemberService {
         return nickname.toString();
     }
 
-    /**
-     * 회원 탈퇴 처리
-     * - 개인정보 익명화
-     * - 계정 비활성화 (soft delete)
-     * - OAuth 연동 정보 제거
-     *
-     * @param memberId 탈퇴할 회원 ID
-     * @return 처리 결과 (성공 여부)
-     */
-    public boolean withdrawMember(ObjectId memberId) {
-        Optional<Member> memberOpt = memberRepository.findById(memberId);
 
-        if (memberOpt.isEmpty()) {
-            log.warn("탈퇴 처리 실패: 존재하지 않는 회원 ID - {}", memberId);
-            return false;
-        }
+    public MemberResponseDto getMemberByEmail(String email) {
+        Member member = memberRepository.findByEmail(email)
+                .orElseThrow(() -> {
+                    log.warn("이메일에 해당하는 회원을 찾을 수 없음: {}", email);
+                    return new RuntimeException("회원을 찾을 수 없습니다.");
+                });
 
-        Member member = memberOpt.get();
-
-        // 이미 탈퇴한 회원인지 확인
-        if (member.getDeletedAt() != null) {
-            log.warn("이미 탈퇴한 회원입니다: {}", memberId);
-            return false;
-        }
-
-        try {
-            // 1. 개인정보 익명화
-            anonymizePersonalData(member);
-
-            // 2. 계정 비활성화 (soft delete)
-            member.delete(); // Member 엔티티의 delete() 메서드 호출 (deletedAt 설정)
-
-            // 3. 회원 정보 저장
-            memberRepository.save(member);
-
-            log.info("회원 탈퇴 처리 완료: {}", memberId);
-            return true;
-        } catch (Exception e) {
-            log.error("회원 탈퇴 처리 중 오류 발생: {}", e.getMessage(), e);
-            return false;
-        }
+        return convertToDto(member);
     }
 
     /**
-     * 회원 개인정보 익명화 처리
-     * @param member 익명화할 회원
+     * Member 엔티티를 MemberResponseDto로 변환
+     * @param member 회원 엔티티
+     * @return 회원 정보 DTO
      */
-    private void anonymizePersonalData(Member member) {
-        // 고유 식별자 생성 (UUID 뒷부분 8자리)
-        String anonymousId = UUID.randomUUID().toString().substring(24);
-
-        // 이메일 익명화 (이메일 형식 유지하면서 식별 불가능하게)
-        member.anonymizeEmail("withdrawn" + anonymousId + "@anonymous.com");
-
-        // 이름 익명화
-        member.anonymizeName("탈퇴회원");
-
-        // 닉네임 익명화 (중복 방지를 위해 고유 ID 포함)
-        member.updateNickname("탈퇴회원#" + anonymousId);
-
-        // 프로필 이미지 제거
-        member.removeProfileImage();
-
-        // OAuth 연동 정보 제거
-        member.clearOAuthIds();
+    private MemberResponseDto convertToDto(Member member) {
+        return MemberResponseDto.builder()
+                .id(member.getId().toString())
+                .email(member.getEmail())
+                .name(member.getName())
+                .nickname(member.getNickname())
+                .profileImage(member.getProfileImage())
+                .role(member.getRole())
+                .connectedProviders(member.getOauthIds() != null ? member.getOauthIds().keySet() : Collections.emptySet())
+                .createdAt(member.getCreatedAt())
+                .updatedAt(member.getUpdatedAt())
+                .build();
     }
 }
