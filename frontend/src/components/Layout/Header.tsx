@@ -1,10 +1,12 @@
 "use client";
 import Link from 'next/link';
 import useAuthStore from '@/stores/authStore';
+import useAuth from '@/hooks/useAuth';
 
 
 const Header: React.FC = () => {
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
+  const { logout } = useAuth();
   console.log(isLoggedIn);
 
   return (
@@ -20,8 +22,11 @@ const Header: React.FC = () => {
         {/* Navigation */}
         <nav className="flex gap-6 text-sm text-gray-800 font-medium">
           <Link href="/community" className="hover:text-[#0095FF] transition">커뮤니티</Link>
-          {!isLoggedIn ? (<Link href="/auth/login" className="hover:text-[#0095FF] transition">로그인</Link>
-          ) :<Link href="/auth/logout" className="hover:text-[#0095FF] transition">로그아웃</Link>}
+          {!isLoggedIn ? (
+            <Link href="/auth/login" className="hover:text-[#0095FF] transition">로그인</Link>
+          ) : (
+            <button onClick={logout} className="hover:text-[#0095FF] transition">로그아웃</button>
+          )}
         </nav>
       </div>
     </header>
