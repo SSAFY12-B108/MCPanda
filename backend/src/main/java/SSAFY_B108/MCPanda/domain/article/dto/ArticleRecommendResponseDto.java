@@ -1,6 +1,7 @@
 package SSAFY_B108.MCPanda.domain.article.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Schema(description = "게시글 추천/추천 취소 응답 DTO")
 public class ArticleRecommendResponseDto {
@@ -12,6 +13,7 @@ public class ArticleRecommendResponseDto {
     private int recommendCount;
 
     @Schema(description = "현재 사용자의 해당 게시글 추천 상태", example = "true")
+    @JsonProperty("isLiked")
     private boolean isLiked;
 
     // 기본 생성자
@@ -42,11 +44,12 @@ public class ArticleRecommendResponseDto {
         this.recommendCount = recommendCount;
     }
 
+    @JsonProperty("isLiked")
     public boolean isLiked() { // boolean 타입의 getter는 isXXX() 형태
         return isLiked;
     }
 
-    public void setLiked(boolean liked) {
-        isLiked = liked;
+    public void setIsLiked(boolean isLiked) {
+        this.isLiked = isLiked;
     }
 }
