@@ -19,7 +19,7 @@ export default function CommunityClient() {
 
   // API 요청 파라미터 상태
   const [queryParams, setQueryParams] = useState<ArticlesParams>({
-    type: "latest",
+    type: "recommend",
     page: 1,
   });
 
@@ -43,7 +43,7 @@ export default function CommunityClient() {
   };
 
   // 정렬 타입 변경 함수
-  const handleTypeChange = (type: "latest" | "recommend") => {
+  const handleTypeChange = (type: "recommend" | "latest") => {
     setQueryParams((prev) => ({
       ...prev,
       type,
@@ -124,21 +124,21 @@ export default function CommunityClient() {
             <span
               className="cursor-pointer"
               style={{
-                color: queryParams.type === "latest" ? "#1E88E5" : undefined,
-              }}
-              onClick={() => handleTypeChange("latest")}
-            >
-              최신순
-            </span>
-            <span className="mx-2">|</span>
-            <span
-              className="cursor-pointer"
-              style={{
                 color: queryParams.type === "recommend" ? "#1E88E5" : undefined,
               }}
               onClick={() => handleTypeChange("recommend")}
             >
               추천순
+            </span>
+            <span className="mx-2">|</span>
+            <span
+              className="cursor-pointer"
+              style={{
+                color: queryParams.type === "latest" ? "#1E88E5" : undefined,
+              }}
+              onClick={() => handleTypeChange("latest")}
+            >
+              최신순
             </span>
           </div>
           {/* 글 작성 버튼 */}

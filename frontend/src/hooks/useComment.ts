@@ -19,7 +19,7 @@ export const useAddComment = (articleId: string) => {
   
   return useMutation<AddCommentResponse, AxiosError, AddCommentRequest>({
     mutationFn: async (request: AddCommentRequest) => {
-      const { data } = await apiClient.post(`/api/comments/${articleId}/comment`, request);
+      const { data } = await apiClient.post(`/comments/${articleId}/comment`, request);
       return data as Comment;
     },
     onSuccess: () => {
@@ -40,7 +40,7 @@ export const useDeleteComment = (articleId: string) => {
   
   return useMutation<unknown, AxiosError, string>({
     mutationFn: async (commentId: string) => {
-      const { data } = await apiClient.delete(`/api/comments/${articleId}/${commentId}`);
+      const { data } = await apiClient.delete(`/comments/${articleId}/${commentId}`);
       return data;
     },
     onSuccess: () => {
