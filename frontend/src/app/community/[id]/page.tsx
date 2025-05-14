@@ -3,7 +3,7 @@ import McpCodeSection from "@/components/community/McpCodeSection";
 import CommentSection from "@/components/community/CommentSection";
 import Header from "@/components/Layout/Header";
 import Chatbot from '@/components/Layout/Chatbot';
-import React, { useEffect } from "react"; // Import useEffect
+import React from "react"; // Import useEffect
 import { useRouter, useParams } from "next/navigation";
 import { useArticleDetail, useRecommendArticle, useDeleteArticle } from "@/hooks/useArticle";
 import { useDateFormat } from "@/hooks/useDateFormat";
@@ -30,7 +30,7 @@ export default function Page() {
   const deleteMutation = useDeleteArticle();
   
   // 작성자 체크 (현재 로그인한 사용자가 글 작성자인지 확인)
-  const isAuthor = user && article && article.author?.memberId === user._id;
+  const isAuthor = user && article && article.author?.memberId === user.id;
   
   const handleCopyUrl = () => {
     navigator.clipboard.writeText(window.location.href);
@@ -63,7 +63,7 @@ export default function Page() {
   };
   
   const handleEdit = () => {
-    router.push(`/community/edit/${articleId}`);
+    router.push(`/community/${articleId}/edit`);
   };
 
   if (isLoading) return <div className="flex justify-center p-20">로딩 중...</div>;
@@ -87,9 +87,9 @@ export default function Page() {
           {/* 작성자인 경우에만 수정/삭제 버튼 표시 */}
           {isAuthor && (
             <div>
-              <button className="text-gray-500" onClick={handleEdit}>수정</button>
+              <button className="text-gray-500 cursor-pointer" onClick={handleEdit}>수정</button>
               <span className="mx-1 text-gray-500">|</span>
-              <button className="text-gray-500" onClick={handleDelete}>삭제</button>
+              <button className="text-gray-500 cursor-pointer" onClick={handleDelete}>삭제</button>
             </div>
           )}
         </div>
