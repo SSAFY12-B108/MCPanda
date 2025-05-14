@@ -13,7 +13,7 @@ async function fetchInitialArticles(): Promise<ArticlesResponse> {
 
 export default async function Page() {
   const queryClient = new QueryClient();
-  const initialParams = { type: 'latest', page: 1 };
+  const initialParams = { type: 'recommend', page: 1 };
 
   await queryClient.prefetchQuery({
     queryKey: ['articles', initialParams],
