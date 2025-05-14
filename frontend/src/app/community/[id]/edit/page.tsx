@@ -43,7 +43,7 @@ export default function EditPage() {
   useEffect(() => {
     if (!article || !user) return;
 
-    const isAuthor = article.author.memberId === user._id;
+    const isAuthor = article.author.memberId === user.id;
     if (!isAuthor) {
       alert("수정 권한이 없습니다.");
       router.replace("/community");
