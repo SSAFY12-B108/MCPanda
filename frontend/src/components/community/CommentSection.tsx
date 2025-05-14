@@ -113,8 +113,8 @@ export default function CommentSection({ comments = [] }: CommentSectionProps) {
                 <p className="font-bold">{comment.author?.nickname || '익명'}</p>
                 <div className="flex items-center gap-3">
                   {/* memberId 필드 유지: 현재 사용자의 ID와 비교 */}
-                  {/* Use user?._id for comparison */}
-                  {isLoggedIn && comment.author?.memberId === user?._id && (
+                  {/* Use user?.id for comparison */}
+                  {isLoggedIn && comment.author?.memberId === user?.id && (
                     <button 
                       className="text-gray-500 text-sm hover:text-red-500 transition"
                       onClick={() => handleDeleteComment(comment.id || '')}
