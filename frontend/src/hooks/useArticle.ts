@@ -1,6 +1,7 @@
 // hooks/useArticle.ts
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import apiClient from '@/api/client';
+import toast from 'react-hot-toast';
 
 // 공통 인터페이스
 export interface Author {
@@ -100,7 +101,6 @@ export const useArticleQuery = (params: ArticlesParams) => {
       searchParams.append('page', params.page.toString());
       
       const queryString = searchParams.toString();
-      console.log('실제 API 요청 URL:', `/articles?${queryString}`);
       
       try {
         const { data } = await apiClient.get<ArticlesResponse>(`/articles?${queryString}`);
@@ -175,10 +175,18 @@ export const useRecommendArticle = (articleId: string) => {
           });
         }
       });
+      
+      // 추천 성공 토스트 메시지 추가
+      if (data.isLiked) {
+        toast.success('게시글을 추천했어요. 👍');
+      } else {
+        toast.success('게시글 추천을 취소했어요. 👌');
+      }
     },
     onError: (error) => {
       console.error('추천 처리 중 오류 발생:', error);
-      // 오류 발생 시 사용자에게 알림 표시 등의 처리 가능
+      // 오류 발생 시 사용자에게 토스트 메시지로 알림
+      toast.error('게시글 추천 처리 중 오류가 발생했어요. 😢');
     }
   });
 };
@@ -194,6 +202,9 @@ export const useDeleteArticle = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['articles'] });
+    },
+    onError: (error) => {
+      console.error('게시글 삭제 중 오류 발생:', error);
     }
   });
 };

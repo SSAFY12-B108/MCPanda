@@ -8,6 +8,7 @@ import { useRouter, useParams } from "next/navigation";
 import { useArticleDetail, useRecommendArticle, useDeleteArticle } from "@/hooks/useArticle";
 import { useDateFormat } from "@/hooks/useDateFormat";
 import useAuthStore from "@/stores/authStore";
+import toast from 'react-hot-toast';
 
 export default function Page() {
   const router = useRouter();
@@ -33,9 +34,15 @@ export default function Page() {
   const isAuthor = user && article && article.author?.memberId === user.id;
   
   const handleCopyUrl = () => {
-    navigator.clipboard.writeText(window.location.href);
-    alert("페이지 URL이 복사되었습니다.");
-  };
+  navigator.clipboard.writeText(window.location.href)
+    .then(() => {
+      toast.success('페이지 URL 복사 완료! 🐼');
+    })
+    .catch((error) => {
+      console.error('URL 복사 실패:', error);
+      toast.error('URL 복사를 실패했어요. 😢');
+    });
+};
 
   const handleRecommendClick = () => {
     // 로그인 체크
@@ -55,8 +62,12 @@ export default function Page() {
     if (window.confirm('정말 삭제하시겠습니까?')) {
       deleteMutation.mutate(articleId, {
         onSuccess: () => {
-          alert('게시글이 삭제되었습니다.');
+          toast.success('게시글 삭제 완료! 🐼');
           router.push('/community');
+        },
+        onError: (error) => {
+          console.error('게시글 삭제 실패:', error);
+          toast.error('게시글 삭제에 실패했어요.');
         }
       });
     }

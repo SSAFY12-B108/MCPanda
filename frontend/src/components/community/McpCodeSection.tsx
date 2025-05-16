@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { McpContent } from "@/hooks/useArticle";
+import toast from 'react-hot-toast';
 
 interface McpCodeSectionProps {
   mcpContent?: McpContent;
@@ -23,8 +24,16 @@ export default function McpCodeSection({ mcpContent = {} }: McpCodeSectionProps)
   const handleCopyCode = () => {
     const codeElement = document.getElementById("json-code");
     if (codeElement) {
-      navigator.clipboard.writeText(codeElement.innerText);
-      alert("코드가 복사되었습니다.");
+      navigator.clipboard.writeText(codeElement.innerText)
+        .then(() => {
+          toast.success("코드 복사 완료! 🐼");
+        })
+        .catch((error) => {
+          console.error('코드 복사 실패:', error);
+          toast.error("코드 복사에 실패했어요. 😢");
+        });
+    } else {
+      toast.error("복사할 코드를 찾을 수 없어요. 😢");
     }
   };
 

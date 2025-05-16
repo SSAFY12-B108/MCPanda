@@ -1,9 +1,8 @@
-// hooks/useComment.ts
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import apiClient from '@/api/client';
 import { Comment } from '@/hooks/useArticle';
-import { toast } from 'react-hot-toast'; // 토스트 메시지 라이브러리 추가 (선택적)
+import toast from 'react-hot-toast'; // 옵셔널 체이닝 제거
 
 // 댓글 작성 요청 인터페이스
 interface AddCommentRequest {
@@ -25,11 +24,11 @@ export const useAddComment = (articleId: string) => {
     onSuccess: () => {
       // 댓글 작성 성공 시 캐시 갱신
       queryClient.invalidateQueries({ queryKey: ['article', articleId] });
-      toast?.success('댓글이 등록되었습니다.');
+      toast.success('댓글 등록 완료! 🐼');
     },
     onError: (error) => {
       console.error('댓글 작성 실패:', error);
-      toast?.error('댓글 등록에 실패했습니다. 다시 시도해주세요.');
+      toast.error('댓글 등록에 실패했어요. 😢');
     }
   });
 };
@@ -46,11 +45,11 @@ export const useDeleteComment = (articleId: string) => {
     onSuccess: () => {
       // 댓글 삭제 성공 시 캐시 갱신
       queryClient.invalidateQueries({ queryKey: ['article', articleId] });
-      toast?.success('댓글이 삭제되었습니다.');
+      toast.success('댓글 삭제 완료! 🐼');
     },
     onError: (error) => {
       console.error('댓글 삭제 실패:', error);
-      toast?.error('댓글 삭제에 실패했습니다. 다시 시도해주세요.');
+      toast.error('댓글 삭제에 실패했어요.');
     }
   });
 };
