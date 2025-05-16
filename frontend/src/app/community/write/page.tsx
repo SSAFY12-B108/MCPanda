@@ -5,6 +5,7 @@ import axios from "axios";
 import Header from "@/components/Layout/Header";
 import { useRouter } from "next/navigation";
 import useAuthStore from "@/stores/authStore";
+import toast from 'react-hot-toast';
 
 
 const toolsList = [
@@ -45,31 +46,31 @@ export default function Write() {
   };
 
   // 작성하기 버튼 클릭 시 호출되는 함수
-const createArticle = useMutation({
-  mutationFn: async () => {
-    const mcpsObject = selectedTools.reduce((acc, tool) => {
-      acc[tool] = "true"; // ✅ 문자열 "true"
-      return acc;
-    }, {} as Record<string, string>);
+  const createArticle = useMutation({
+    mutationFn: async () => {
+      const mcpsObject = selectedTools.reduce((acc, tool) => {
+        acc[tool] = "true"; // ✅ 문자열 "true"
+        return acc;
+      }, {} as Record<string, string>);
 
-    const response = await axios.post("/api/articles", {
-      title,
-      content,
-      mcps: mcpsObject,
-    });
+      const response = await axios.post("/api/articles", {
+        title,
+        content,
+        mcps: mcpsObject,
+      });
 
-    return response.data;
-  },
-  onSuccess: () => {
-    alert("작성 완료! 🎉");
-    router.push('/community');
-  },
-  onError: () => {
-    alert("업로드에 실패했습니다.");
-    console.log(title, content, selectedTools);
-    console.log('게시글 업로드 실패', errors);
-  },
-});
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success("작성 완료! 🎉");
+      router.push('/community');
+    },
+    onError: () => {
+      toast.error("게시글 등록에 실패했어요. 😢");
+      console.log(title, content, selectedTools);
+      console.log('게시글 업로드 실패', errors);
+    },
+  });
 
   // 폼 제출 핸들러
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {

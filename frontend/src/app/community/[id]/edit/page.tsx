@@ -7,6 +7,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import Header from "@/components/Layout/Header";
 import { useArticleDetail } from "@/hooks/useArticle";
 import useAuthStore from "@/stores/authStore";
+import toast from 'react-hot-toast';
 
 const toolsList = [
   "Figma", "React", "Docker", "MongoDB", "Node.js",
@@ -41,48 +42,47 @@ export default function EditPage() {
   // 2. 데이터 불러와서 상태에 세팅
   // useQuery로 가져온 data를 → useState에 다시 세팅하는 역할
   useEffect(() => {
-    if (!article || !user) return;
+  if (!article || !user) return;
 
-    const isAuthor = article.author.memberId === user.id;
-    if (!isAuthor) {
-      alert("수정 권한이 없습니다.");
-      router.replace("/community");
-    }
+  const isAuthor = article.author.memberId === user.id;
+  if (!isAuthor) {
+    toast.error("수정 권한이 없어요.");
+    router.replace("/community");
+  }
 
-    setTitle(data.title);
-    setContent(data.content);
-    setSelectedTools(data.mcps);
-  }, [article, user]);
+  setTitle(data.title);
+  setContent(data.content);
+  setSelectedTools(data.mcps);
+}, [article, user]);
 
-  const toggleTool = (tool: string) => {
-    setSelectedTools((prev) =>
-      prev.includes(tool)
-        ? prev.filter((t) => t !== tool)
-        : prev.length < 3
-          ? [...prev, tool]
-          : prev
-    );
-  };
+const toggleTool = (tool: string) => {
+  setSelectedTools((prev) =>
+    prev.includes(tool)
+      ? prev.filter((t) => t !== tool)
+      : prev.length < 3
+        ? [...prev, tool]
+        : (toast.error("최대 3개까지 선택 가능해요!"), prev) // 3개 초과 선택 시 토스트 메시지 추가
+  );
+};
 
-  const updateArticle = useMutation({
-    mutationFn: async () => {
-      const res = await axios.put(`/api/articles/${id}`, {
-        title,
-        content,
-        mcps: selectedTools,
-      });
-      return res.data;
-    },
-    onSuccess: () => {
-      alert("수정 완료! ✏️");
-      router.push(`/community/${id}`); // 상세 페이지로 이동
-    },
-    onError: () => {
-      alert("수정에 실패했습니다.");
-      console.log("게시글 수정 실패", errors);
-    },
-  });
-
+const updateArticle = useMutation({
+  mutationFn: async () => {
+    const res = await axios.put(`/api/articles/${id}`, {
+      title,
+      content,
+      mcps: selectedTools,
+    });
+    return res.data;
+  },
+  onSuccess: () => {
+    toast.success("수정 완료! ✏️");
+    router.push(`/community/${id}`); // 상세 페이지로 이동
+  },
+  onError: () => {
+    toast.error("게시글 수정에 실패했어요. 😢");
+    console.log("게시글 수정 실패", errors);
+  },
+});
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
