@@ -1,10 +1,10 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { McpContent } from "@/hooks/useArticle";
+import { Mcps } from "@/hooks/useArticle";
 import toast from 'react-hot-toast';
 
 interface McpCodeSectionProps {
-  mcpContent?: McpContent;
+  mcpContent?: Mcps;
 }
 
 export default function McpCodeSection({ mcpContent = {} }: McpCodeSectionProps) {
