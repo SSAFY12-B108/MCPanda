@@ -69,10 +69,9 @@ public class Member {
     /**
      * 회원 정보 업데이트 (OAuth2 로그인 시 사용)
      */
-    public Member update(String name, String profileImage) {
+    public void update(String name, String profileImage) {
         this.name = name;
         this.profileImage = profileImage;
-        return this;
     }
 
     /**
