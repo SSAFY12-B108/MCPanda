@@ -13,6 +13,7 @@ import lombok.NoArgsConstructor;
 public class TokenDto {
     private String accessToken;
     private String refreshToken;
+    private boolean success;
 
     /**
      * RefreshToken 요청을 위한 내부 클래스
