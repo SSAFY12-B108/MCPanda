@@ -37,6 +37,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.HashMap;
+import java.util.Map;
 
 @Tag(name = "게시글 API", description = "게시글 CRUD 및 추천 기능을 위한 API 명세")
 @RestController
@@ -44,10 +46,12 @@ import java.util.stream.Collectors;
 public class ArticleController {
 
     private final ArticleService articleService;
+    private final RecommendationRepository recommendationRepository;
 
     @Autowired
-    public ArticleController(ArticleService articleService) {
+    public ArticleController(ArticleService articleService, RecommendationRepository recommendationRepository) {
         this.articleService = articleService;
+        this.recommendationRepository = recommendationRepository;
     }
 
     @Operation(
@@ -88,11 +92,26 @@ public class ArticleController {
     @GetMapping("/{articleId}")
     public ResponseEntity<?> findArticleById(
             @Parameter(description = "조회할 게시글의 고유 ID", required = true)
-            @PathVariable String articleId
+            @PathVariable String articleId,
+            @Parameter(hidden = true) @AuthenticationPrincipal Member loggedInMember
     ) {
         Optional<Article> articleOptional = articleService.findArticleById(articleId);
         if (articleOptional.isPresent()) {
-            return ResponseEntity.ok(articleOptional.get());
+            Article article = articleOptional.get();
+            
+            // 로그인한 사용자의 추천 상태 확인
+            boolean isLiked = false;
+            if (loggedInMember != null) {
+                String memberId = loggedInMember.getId().toString();
+                isLiked = recommendationRepository.findByMemberIdAndArticleId(memberId, articleId).isPresent();
+            }
+            
+            // 응답에 게시글과 추천 상태를 함께 포함
+            Map<String, Object> response = new HashMap<>();
+            response.put("article", article);
+            response.put("isLiked", isLiked);
+            
+            return ResponseEntity.ok(response);
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("해당 ID의 게시글을 찾을 수 없습니다: " + articleId);
         }
