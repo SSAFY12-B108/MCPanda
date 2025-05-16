@@ -66,9 +66,7 @@ apiClient.interceptors.response.use(
 
       try {
         // 토큰 재발급 요청 - 쿠키는 자동으로 함께 전송됨
-        const response = await axios.post<{ success: boolean }>('/api/auth/reissue', {}, { 
-          withCredentials: true 
-        });
+        const response = await apiClient.post<{ success: boolean }>('/auth/reissue');
 
         console.log('🐼response.data', response.data)
 
