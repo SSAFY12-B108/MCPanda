@@ -73,6 +73,6 @@ public class TokenService {
         refreshTokenService.updateRefreshToken(memberId, newRefreshToken);
 
         log.info("회원: {}의 토큰이 재발급되었습니다.", member.getEmail());
-        return new TokenDto(newAccessToken, newRefreshToken);
+        return new TokenDto(newAccessToken, newRefreshToken, true);
     }
 }
