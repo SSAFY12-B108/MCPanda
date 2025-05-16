@@ -1,7 +1,7 @@
 package SSAFY_B108.MCPanda.global.exception;
 
-import SSAFY_B108.MCPanda.global.response.ApiResult;
-import SSAFY_B108.MCPanda.global.response.StatusCode;
+import SSAFY_B108.MCPanda.global.response.ApiResponse;
+import SSAFY_B108.MCPanda.global.response.ApiStatusCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -27,78 +27,78 @@ public class GlobalExceptionHandler {
      * CustomException 처리
      */
     @ExceptionHandler(CustomException.class)
-    protected ResponseEntity<ApiResult<Object>> handleCustomException(CustomException e) {
+    protected ResponseEntity<ApiResponse<Object>> handleCustomException(CustomException e) {
         log.error("CustomException: {}", e.getMessage());
         return ResponseEntity
-                .status(HttpStatus.valueOf(e.getStatusCode().getCode()))
-                .body(ApiResult.error(e.getStatusCode(), e.getMessage()));
+                .status(HttpStatus.valueOf(e.getApiStatusCode().getCode()))
+                .body(ApiResponse.error(e.getApiStatusCode(), e.getMessage()));
     }
 
     /**
      * 유효성 검사 실패 시 처리
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    protected ResponseEntity<ApiResult<Object>> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
+    protected ResponseEntity<ApiResponse<Object>> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
         log.error("MethodArgumentNotValidException", e);
         String message = e.getBindingResult().getAllErrors().get(0).getDefaultMessage();
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
-                .body(ApiResult.error(StatusCode.BAD_REQUEST, message != null ? message : "입력값이 올바르지 않습니다."));
+                .body(ApiResponse.error(ApiStatusCode.BAD_REQUEST, message != null ? message : "입력값이 올바르지 않습니다."));
     }
 
     /**
      * 바인딩 예외 처리
      */
     @ExceptionHandler(BindException.class)
-    protected ResponseEntity<ApiResult<Object>> handleBindException(BindException e) {
+    protected ResponseEntity<ApiResponse<Object>> handleBindException(BindException e) {
         log.error("BindException", e);
         String message = e.getBindingResult().getAllErrors().get(0).getDefaultMessage();
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
-                .body(ApiResult.error(StatusCode.BAD_REQUEST, message != null ? message : "입력값이 올바르지 않습니다."));
+                .body(ApiResponse.error(ApiStatusCode.BAD_REQUEST, message != null ? message : "입력값이 올바르지 않습니다."));
     }
 
     /**
      * 메소드 인자 타입 불일치 처리
      */
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    protected ResponseEntity<ApiResult<Object>> handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException e) {
+    protected ResponseEntity<ApiResponse<Object>> handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException e) {
         log.error("MethodArgumentTypeMismatchException", e);
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
-                .body(ApiResult.error(StatusCode.BAD_REQUEST, "입력값의 타입이 올바르지 않습니다."));
+                .body(ApiResponse.error(ApiStatusCode.BAD_REQUEST, "입력값의 타입이 올바르지 않습니다."));
     }
 
     /**
      * 제약 조건 위반 예외 처리
      */
     @ExceptionHandler(ConstraintViolationException.class)
-    protected ResponseEntity<ApiResult<Object>> handleConstraintViolationException(ConstraintViolationException e) {
+    protected ResponseEntity<ApiResponse<Object>> handleConstraintViolationException(ConstraintViolationException e) {
         log.error("ConstraintViolationException", e);
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
-                .body(ApiResult.error(StatusCode.BAD_REQUEST, e.getMessage()));
+                .body(ApiResponse.error(ApiStatusCode.BAD_REQUEST, e.getMessage()));
     }
 
     /**
      * NoSuchElementException 처리 (데이터를 찾을 수 없을 때)
      */
     @ExceptionHandler(NoSuchElementException.class)
-    protected ResponseEntity<ApiResult<Object>> handleNoSuchElementException(NoSuchElementException e) {
+    protected ResponseEntity<ApiResponse<Object>> handleNoSuchElementException(NoSuchElementException e) {
         log.error("NoSuchElementException", e);
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
-                .body(ApiResult.error(StatusCode.NOT_FOUND, e.getMessage()));
+                .body(ApiResponse.error(ApiStatusCode.NOT_FOUND, e.getMessage()));
     }
 
     /**
      * 기타 모든 예외 처리
      */
     @ExceptionHandler(Exception.class)
-    protected ResponseEntity<ApiResult<Object>> handleException(Exception e) {
+    protected ResponseEntity<ApiResponse<Object>> handleException(Exception e) {
         log.error("Exception", e);
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResult.error(StatusCode.INTERNAL_SERVER_ERROR, "서버 내부 오류가 발생했습니다."));
+                .body(ApiResponse.error(ApiStatusCode.INTERNAL_SERVER_ERROR, "서버 내부 오류가 발생했습니다."));
     }
 } 
