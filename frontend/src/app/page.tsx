@@ -1,5 +1,20 @@
-export default function Home() {
+// app/page.tsx
+
+import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query';
+import { fetchMainArticles } from '@/hooks/useMainPage';
+import HomeClient from '@/components/Home/HomeClient';
+
+export default async function Home() {
+  const queryClient = new QueryClient();
+
+  await queryClient.prefetchQuery({
+    queryKey: ['mainArticles'],
+    queryFn: fetchMainArticles,
+  });
+
   return (
-    <div>메인 페이지</div>
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <HomeClient /> 
+    </HydrationBoundary>
   );
 }
