@@ -1,11 +1,23 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Header from "@/components/Layout/Header";
 import Chatbot from "@/components/Layout/Chatbot";
 import Image from "next/image";
 
+import useAuthStore from "@/stores/authStore";
+
 export default function LoginPage() {
+  const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
+  const router = useRouter();
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      router.push("/");
+    }
+  }, [isLoggedIn, router]);
+
   const handleLogin = useCallback((provider: "google" | "github") => {
     window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/api/auth/oauth2/authorization/${provider}`;
   }, []);
