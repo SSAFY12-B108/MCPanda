@@ -51,13 +51,16 @@ public class AuthController {
 
             log.info("토큰 재발급 및 쿠키 설정 성공");
             // 클라이언트가 새 토큰을 즉시 사용할 수 있도록 응답 본문에도 포함 (선택 사항이지만 편리함)
+            newTokens.setSuccess(true); // 성공 여부 설정
             return ResponseEntity.ok(newTokens);
         } catch (RuntimeException e) {
             log.warn("토큰 재발급 실패: {}", e.getMessage());
             // 실패 시 기존 쿠키를 삭제
             refreshTokenService.deleteAccessTokenCookie(response);
             refreshTokenService.deleteRefreshTokenCookie(response);
-            return ResponseEntity.status(401).body(null); // Unauthorized
+            TokenDto failedTokenDto = new TokenDto();
+            failedTokenDto.setSuccess(false);
+            return ResponseEntity.status(401).body(failedTokenDto); // Unauthorized
         }
     }
 }
