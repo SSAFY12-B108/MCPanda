@@ -2,11 +2,10 @@ package SSAFY_B108.MCPanda;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.ai.vectorstore.pinecone.autoconfigure.PineconeVectorStoreAutoConfiguration;
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.info.Info;
 
-@SpringBootApplication(exclude = { PineconeVectorStoreAutoConfiguration.class })
+@SpringBootApplication
 @OpenAPIDefinition(
     info = @Info(
         title = "MCPanda API",
