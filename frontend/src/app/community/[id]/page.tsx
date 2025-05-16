@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 // app/community/[id]/page.tsx
 import { QueryClient, dehydrate, HydrationBoundary } from '@tanstack/react-query';
 import { ArticleDetail } from '@/hooks/useArticle';
@@ -87,10 +86,3 @@ export default async function Page({ params }: { params: { id: string } }) {
     </HydrationBoundary>
   );
 }
-=======
-export default function Home() {
-  return (
-    <div>메인 페이지</div>
-  );
-}
->>>>>>> 8955c109cfe6b33a986e1824dde1e190802467b3
