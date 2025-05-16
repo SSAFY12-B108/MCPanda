@@ -21,12 +21,6 @@ public interface MemberRepository extends MongoRepository<Member, ObjectId> {
     Optional<Member> findByEmail(String email);
 
     /**
-     * 닉네임으로 회원 조회
-     */
-    @Query("{ 'nickname': ?0, 'deleted_at': null }")
-    Optional<Member> findByNickname(String nickname);
-
-    /**
      * 닉네임 중복 확인
      */
     @Query(value = "{ 'nickname': ?0, 'deleted_at': null }", count = true)
@@ -38,9 +32,4 @@ public interface MemberRepository extends MongoRepository<Member, ObjectId> {
     @Query("{ 'liked_posts': ?0, 'deleted_at': null }")
     List<Member> findByLikedPostsContaining(ObjectId postId);
 
-    /**
-     * 소프트 삭제된 회원 조회
-     */
-    @Query("{ 'deleted_at': { $ne: null } }")
-    List<Member> findDeletedMembers();
 }

@@ -20,11 +20,6 @@ public class AuthController {
     private final TokenService tokenService;
     private final RefreshTokenService refreshTokenService;
 
-    @GetMapping("/logout")
-    public ResponseEntity<Map<String,String>> logout() {
-        return ResponseEntity.ok(Map.of("message", "로그아웃에 성공했습니다."));
-    }
-
     /**
      * AccessToken과 RefreshToken을 재발급합니다.
      * @param refreshTokenValue RefreshToken 값 (쿠키에서 추출)
@@ -36,8 +31,14 @@ public class AuthController {
             @CookieValue(name = "refreshToken", required = false) String refreshTokenValue,
             HttpServletResponse response) {
 
+        // 보안 헤더 추가
+        response.setHeader("Cache-Control", "no-store");
+        response.setHeader("Pragma", "no-cache");
+        
         if (refreshTokenValue == null || refreshTokenValue.isEmpty()) {
-            log.warn("Refresh token cookie is missing or empty.");
+            log.warn("쿠키에서 RefreshToken 찾을 수 없음");
+            refreshTokenService.deleteAccessTokenCookie(response);
+            refreshTokenService.deleteRefreshTokenCookie(response);
             return ResponseEntity.status(401).body(null); // Unauthorized
         }
 
@@ -48,14 +49,14 @@ public class AuthController {
             refreshTokenService.setAccessTokenCookie(response, newTokens.getAccessToken());
             refreshTokenService.setRefreshTokenCookie(response, newTokens.getRefreshToken());
 
-            log.info("Tokens reissued and cookies set successfully.");
+            log.info("토큰 재발급 및 쿠키 설정 성공");
             // 클라이언트가 새 토큰을 즉시 사용할 수 있도록 응답 본문에도 포함 (선택 사항이지만 편리함)
             return ResponseEntity.ok(newTokens);
         } catch (RuntimeException e) {
-            log.warn("Token reissue failed: {}", e.getMessage());
-            // 실패 시 기존 쿠키를 삭제하는 로직을 추가할 수도 있습니다.
-            // 예를 들어, 만료된 리프레시 토큰으로 요청이 온 경우 등
-            // refreshTokenService.deleteRefreshTokenCookie(response); // 이런 메소드가 필요할 수 있음
+            log.warn("토큰 재발급 실패: {}", e.getMessage());
+            // 실패 시 기존 쿠키를 삭제
+            refreshTokenService.deleteAccessTokenCookie(response);
+            refreshTokenService.deleteRefreshTokenCookie(response);
             return ResponseEntity.status(401).body(null); // Unauthorized
         }
     }

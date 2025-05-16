@@ -5,6 +5,7 @@ import SSAFY_B108.MCPanda.global.jwt.JwtTokenAuthenticationFilter;
 import SSAFY_B108.MCPanda.global.jwt.JwtTokenProvider;
 import SSAFY_B108.MCPanda.domain.auth.oauth2.handler.OAuth2LoginSuccessHandler;
 import SSAFY_B108.MCPanda.domain.auth.oauth2.service.CustomOAuth2UserService;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -110,8 +111,11 @@ public class SecurityConfig {
                         .logoutUrl("/api/auth/logout")
                         // 커스텀 로그아웃 핸들러 추가
                         .addLogoutHandler(customLogoutHandler)
-                        // 로그아웃 성공 시 리다이렉트할 URL (핸들러에서 직접 처리하지 않는다면 기본 성공 URL)
-                        .logoutSuccessUrl("/")
+                        .logoutSuccessHandler((request, response, authentication) -> {
+                            response.setContentType("application/json");
+                            response.getWriter().write("{\"message\":\"로그아웃에 성공했습니다.\"}");
+                            response.setStatus(HttpServletResponse.SC_OK);
+                        })
                         .invalidateHttpSession(true) // JWT기반이므로 세션은 큰 의미 없을 수 있으나, 명시적으로 무효화
                         .deleteCookies("JSESSIONID")
                         .clearAuthentication(true)); // SecurityContext에서 Authentication 객체 제거
