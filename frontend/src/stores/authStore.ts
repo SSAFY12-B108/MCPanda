@@ -26,7 +26,7 @@ const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'auth-storage', // unique name
-      storage: createJSONStorage(() => localStorage), // use localStorage
+      storage: createJSONStorage(() => sessionStorage), // 여기를 sessionStorage로 변경
       partialize: (state) => ({ user: state.user, isLoggedIn: state.isLoggedIn }), // specify which parts of the state to store
     }
   )
