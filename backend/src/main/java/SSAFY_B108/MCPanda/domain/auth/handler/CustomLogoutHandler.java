@@ -79,10 +79,10 @@ public class CustomLogoutHandler implements LogoutHandler {
             log.info("로그아웃 요청에서 AccessToken을 찾을 수 없습니다.");
         }
         
-        // 3. 클라이언트(브라우저)의 AccessToken 및 RefreshToken 쿠키 삭제
+        // 3. 클라이언트(브라우저)의 AccessToken, RefreshToken, JSESSION 쿠키 삭제
         refreshTokenService.deleteAccessTokenCookie(response);
         refreshTokenService.deleteRefreshTokenCookie(response);
-
+        refreshTokenService.deleteJSESSIONIDTokenCookie(response);
         log.info("로그아웃 처리 완료. 클라이언트 쿠키가 삭제(만료)되었습니다.");
     }
 }
