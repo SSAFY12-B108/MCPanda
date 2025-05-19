@@ -20,6 +20,15 @@ public class AuthController {
     private final TokenService tokenService;
     private final RefreshTokenService refreshTokenService;
 
+//    @GetMapping("/login")
+//    public ResponseEntity<?> getLoginStatus() {
+//        // 간단한 응답 반환 (상태 체크용)
+//        return ResponseEntity.ok(Map.of(
+//                "status", "unauthenticated",
+//                "message", "Please login to continue"
+//        ));
+//    }
+
     /**
      * AccessToken과 RefreshToken을 재발급합니다.
      * @param refreshTokenValue RefreshToken 값 (쿠키에서 추출)
