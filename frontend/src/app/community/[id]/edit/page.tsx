@@ -2,12 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import apiClient from '@/api/client';
-import { useMutation } from "@tanstack/react-query";
-import Header from "@/components/Layout/Header";
-import { useArticleDetail, McpServers, Mcps } from "@/hooks/useArticle";
+import { useArticleDetail, useUpdateArticle, Mcps, McpServers } from "@/hooks/useArticle";
 import useAuthStore from "@/stores/authStore";
 import toast from 'react-hot-toast';
+import Header from "@/components/Layout/Header";
+
 
 const toolsList = [
   "Figma", "React", "Docker", "MongoDB", "Node.js",
@@ -33,12 +32,15 @@ export default function EditPage() {
     isError 
   } = useArticleDetail(id as string);
 
+  // 게시글 수정 mutation 가져오기
+  const updateArticleMutation = useUpdateArticle();
+
   // 데이터 불러와서 상태에 세팅
   useEffect(() => {
     // articleResponse가 있는지 확인
     if (!articleResponse || !user) return;
 
-    // articleResponse.article에서 author에 접근 (중요: 올바른 타입 구조 반영)
+    // articleResponse.article에서 author에 접근
     const isAuthor = articleResponse.article.author?.memberId === user.id;
     
     if (!isAuthor) {
@@ -67,61 +69,59 @@ export default function EditPage() {
     );
   };
 
-  const updateArticle = useMutation({
-    mutationFn: async () => {
-      // 유효성 검사 후 제출
-      const newErrors = { title: "", tools: "", content: "" };
-      let hasError = false;
-
-      if (!title.trim()) {
-        newErrors.title = "제목을 입력해주세요.";
-        hasError = true;
-      }
-
-      if (selectedTools.length === 0) {
-        newErrors.tools = "하나 이상의 MCP를 선택해주세요.";
-        hasError = true;
-      }
-
-      if (!content.trim()) {
-        newErrors.content = "내용을 입력해주세요.";
-        hasError = true;
-      }
-
-      setErrors(newErrors);
-      if (hasError) throw new Error("유효성 검사 실패");
-
-      // McpServer와 관련된 타입 정의를 사용하여 mcps 데이터 구조 생성
-      const mcpsObject: Mcps = {};
-      
-      selectedTools.forEach(tool => {
-        // 각 도구에 대한 MCP 카테고리 생성
-        mcpsObject[tool] = {
-          mcpServers: {} as McpServers // 빈 서버 객체로 초기화
-        };
-      });
-
-      const res = await apiClient.put(`/articles/${id}`, {
-        title,
-        content,
-        mcps: mcpsObject
-      });
-      
-      return res.data;
-    },
-    onSuccess: () => {
-      toast.success("수정 완료! ✏️");
-      router.push(`/community/${id}`);
-    },
-    onError: (error) => {
-      toast.error("게시글 수정에 실패했어요. 😢");
-      console.error("게시글 수정 실패:", error);
-    },
-  });
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    updateArticle.mutate();
+    
+    // 유효성 검사
+    const newErrors = { title: "", tools: "", content: "" };
+    let hasError = false;
+
+    if (!title.trim()) {
+      newErrors.title = "제목을 입력해주세요.";
+      hasError = true;
+    }
+
+    if (selectedTools.length === 0) {
+      newErrors.tools = "하나 이상의 MCP를 선택해주세요.";
+      hasError = true;
+    }
+
+    if (!content.trim()) {
+      newErrors.content = "내용을 입력해주세요.";
+      hasError = true;
+    }
+
+    setErrors(newErrors);
+    if (hasError) return;
+
+    // McpServer와 관련된 타입 정의를 사용하여 mcps 데이터 구조 생성
+    const mcpsObject: Mcps = {};
+    
+    selectedTools.forEach(tool => {
+      // 각 도구에 대한 MCP 카테고리 생성
+      mcpsObject[tool] = {
+        mcpServers: {} as McpServers // 빈 서버 객체로 초기화
+      };
+    });
+
+    // 수정 API 호출
+    updateArticleMutation.mutate(
+      {
+        id: id as string,
+        data: {
+          title,
+          content,
+          mcps: mcpsObject
+        }
+      }, 
+      {
+        // 여기에 onSuccess 콜백 추가
+        onSuccess: () => {
+          // 성공 시 상세 페이지로 이동
+          router.push(`/community/${id}`);
+        }
+      }
+    );
   };
 
   if (isLoading) {
