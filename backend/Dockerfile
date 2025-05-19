@@ -1,4 +1,4 @@
-FROM openjdk:17-jdk AS builder
+FROM gradle:8.13.0-jdk17-alpine AS builder
 
 WORKDIR /app
 
@@ -14,7 +14,7 @@ COPY ./gradle/wrapper ./gradle/wrapper
 
 COPY src ./src
 
-RUN gradle clean build --no-daemon -x test
+RUN gradle clean build --no-daemon -x test --stacktrace
 
 
 FROM openjdk:17-jre-slim
