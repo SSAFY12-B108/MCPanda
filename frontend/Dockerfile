@@ -12,7 +12,8 @@ COPY . .
 RUN npm run build
 
 # 2. 프로덕션 실행 단계
-FROM nginx:stable-alpine
+# FROM nginx:stable-alpine
+FROM node:22-alpine AS runtime
 
 WORKDIR /app
 
