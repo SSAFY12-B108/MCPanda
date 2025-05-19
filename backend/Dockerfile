@@ -21,7 +21,7 @@ FROM gradle:8.13.0-jdk17-alpine
 
 WORKDIR /app
 
-COPY --from=builder /app/build/libs/*.jar app.jar
+COPY --from=builder /app/build/libs/*.jar /app/
 
 EXPOSE 8080
 
