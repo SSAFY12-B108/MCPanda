@@ -72,6 +72,7 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/auth/login",
                                 "/api/auth/reissue", // 토큰 재발급 URL 추가
+                                "/oauth2/authorization/**",
                                 "/api/auth/login/oauth2/code/**").permitAll()
 
                         // 인증 필요 없는 API 엔드포인트
@@ -88,6 +89,14 @@ public class SecurityConfig {
                 .addFilterBefore(
                         new JwtTokenAuthenticationFilter(jwtTokenProvider),
                         UsernamePasswordAuthenticationFilter.class
+                )
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            // API 요청에 대해서는 401 상태 코드만 반환 (리다이렉트 없음)
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.setContentType("application/json");
+                            response.getWriter().write("{\"error\":\"Unauthorized\",\"message\":\"인증이 필요합니다.\"}");
+                        })
                 )
                 // OAuth2 로그인 설정
                 .oauth2Login(oauth2 -> oauth2
@@ -117,7 +126,6 @@ public class SecurityConfig {
                             response.setStatus(HttpServletResponse.SC_OK);
                         })
                         .invalidateHttpSession(true) // JWT기반이므로 세션은 큰 의미 없을 수 있으나, 명시적으로 무효화
-                        .deleteCookies("JSESSIONID")
                         .clearAuthentication(true)); // SecurityContext에서 Authentication 객체 제거
 
         return http.build();
@@ -126,7 +134,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:3000"));
+        configuration.setAllowedOrigins(List.of("http://localhost:3000", "https://mcpanda.co.kr"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         configuration.setAllowCredentials(true);
