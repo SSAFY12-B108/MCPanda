@@ -7,7 +7,6 @@ import useAuth from '@/hooks/useAuth';
 const Header: React.FC = () => {
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
   const { logout } = useAuth();
-  console.log(isLoggedIn);
 
   return (
     <header className="py-2.5 bg-white border-b border-gray-200 px-10">

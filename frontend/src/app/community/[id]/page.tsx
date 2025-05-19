@@ -4,7 +4,6 @@ import McpCodeSection from "@/components/community/McpCodeSection";
 import CommentSection from "@/components/community/CommentSection";
 import Header from "@/components/Layout/Header";
 import Chatbot from "@/components/Layout/Chatbot";
-import { useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import {
   useArticleDetail,
@@ -29,8 +28,6 @@ export default function Page() {
     isLoading, 
     isError,
     isFetching,
-    isSuccess,
-    status
   } = useArticleDetail(articleId);
 
   // 응답에서 article과 isLiked 추출 (핵심 수정 부분)
@@ -48,20 +45,6 @@ export default function Page() {
 
   // 작성자 체크 (현재 로그인한 사용자가 글 작성자인지 확인)
   const isAuthor = user && article && article.author?.memberId === user.id;
-
-  // 클라이언트 사이드에서만 콘솔 로그 출력
-  useEffect(() => {
-    console.log('Query State:', { 
-      isLoading, 
-      isFetching, 
-      isSuccess,
-      status, 
-      responseData,  // 전체 응답 로깅
-      article,       // 추출된 article 로깅
-      isLiked,       // 추출된 isLiked 로깅
-      articleId
-    });
-  }, [isLoading, isFetching, isSuccess, status, responseData, article, isLiked, articleId]);
 
   const handleCopyUrl = () => {
     navigator.clipboard
