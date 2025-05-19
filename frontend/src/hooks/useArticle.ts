@@ -59,7 +59,12 @@ export interface ArticleListItem extends ArticleBase {
 export interface ArticleDetail extends ArticleBase {
   mcps: Mcps;
   comments: Comment[];
-  isLiked: boolean; // isLiked 속성 추가
+}
+
+// 전체 API 응답 구조를 위한 새로운 인터페이스
+export interface ArticleDetailResponse {
+  article: ArticleDetail;
+  isLiked: boolean;
 }
 
 // API 응답 타입
@@ -120,7 +125,8 @@ export const useArticleDetail = (articleId: string) => {
   return useQuery({
     queryKey: ['article', articleId],
     queryFn: async () => {
-      const { data } = await apiClient.get<ArticleDetail>(`/articles/${articleId}`);
+      // ArticleDetailResponse 타입으로 응답을 받음
+      const { data } = await apiClient.get<ArticleDetailResponse>(`/articles/${articleId}`);
       return data;
     },
     enabled: !!articleId,
@@ -138,17 +144,20 @@ export const useRecommendArticle = (articleId: string) => {
       return data;
     },
     onSuccess: (data) => {
-      // API 응답에서 받은 추천 정보로 게시글 데이터 직접 업데이트
+      // 현재 캐시된 게시글 데이터 가져오기 (ArticleDetailResponse 타입으로)
+      const currentResponse = queryClient.getQueryData<ArticleDetailResponse>(['article', articleId]);
       
-      // 현재 캐시된 게시글 데이터 가져오기
-      const currentArticle = queryClient.getQueryData<ArticleDetail>(['article', articleId]);
-      
-      if (currentArticle) {
+      if (currentResponse) {
         // 응답 데이터의 recommendCount와 isLiked로 업데이트
-        queryClient.setQueryData<ArticleDetail>(['article', articleId], {
-          ...currentArticle,
-          recommendCount: data.recommendCount,
-          isLiked: data.isLiked,
+        queryClient.setQueryData<ArticleDetailResponse>(['article', articleId], {
+          ...currentResponse,
+          // article 객체 내부의 recommendCount 업데이트
+          article: {
+            ...currentResponse.article,
+            recommendCount: data.recommendCount
+          },
+          // 루트 레벨의 isLiked 업데이트
+          isLiked: data.isLiked
         });
       }
       
