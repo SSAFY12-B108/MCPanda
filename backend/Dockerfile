@@ -21,7 +21,7 @@ FROM gradle:8.13.0-jdk17-alpine
 
 WORKDIR /app
 
-COPY --from=builder /app/build/libs/MCPanda-*.jar app.jar
+COPY --from=builder /app/build/libs/MCPanda-*.jar /app/app.jar
 
 EXPOSE 8080
 
