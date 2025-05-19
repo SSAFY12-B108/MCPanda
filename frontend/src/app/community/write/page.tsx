@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import axios from "axios";
+import apiClient from '@/api/client';
 import Header from "@/components/Layout/Header";
 import { useRouter } from "next/navigation";
 import useAuthStore from "@/stores/authStore";
@@ -53,7 +53,7 @@ export default function Write() {
         return acc;
       }, {} as Record<string, string>);
 
-      const response = await axios.post("/api/articles", {
+      const response = await apiClient.post("/articles", {
         title,
         content,
         mcps: mcpsObject,
