@@ -43,7 +43,6 @@ apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean };
-    console.log('🐼에러,,', error.response?.status)
     
     // 401 에러이고 재시도하지 않은 요청인 경우
     if (error.response?.status === 401 && !originalRequest._retry) {
@@ -67,8 +66,6 @@ apiClient.interceptors.response.use(
       try {
         // 토큰 재발급 요청 - 쿠키는 자동으로 함께 전송됨
         const response = await apiClient.post<{ success: boolean }>('/auth/reissue');
-
-        console.log('🐼response.data', response.data)
 
         // 성공적으로 토큰을 갱신한 경우
         if (response.data.success) {
