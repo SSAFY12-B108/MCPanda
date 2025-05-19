@@ -47,7 +47,7 @@ export const metadata: Metadata = {
 
 // 서버 사이드에서 초기 게시글 목록 데이터 가져오기
 async function fetchInitialArticles(): Promise<ArticlesResponse> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/articles?type=recommend&page=1`, {
+  const res = await fetch(`/api/articles?type=recommend&page=1`, {
     cache: 'no-store',
   });
   
