@@ -1,4 +1,4 @@
-FROM gradle:7.5-jdk17 AS builder
+FROM openjdk:17-jdk AS builder
 
 WORKDIR /app
 
