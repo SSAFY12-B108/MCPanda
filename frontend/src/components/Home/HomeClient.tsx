@@ -60,9 +60,10 @@ export default function HomeClient({ defaultCategory, defaultPage }: HomeClientP
             style={{ borderColor: '#0095FF' }}
           >
             <option value="">MCP 선택</option>
-            <option value="react">React</option>
-            <option value="notion">Notion</option>
-            <option value="docker">Docker</option>
+            <option value="frontend">Frontend</option>
+            <option value="backend">Backend</option>
+            <option value="infra">Infra</option>
+            <option value="ETC">기타</option>
           </select>
         </div>
 
