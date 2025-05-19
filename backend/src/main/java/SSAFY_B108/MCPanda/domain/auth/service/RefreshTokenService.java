@@ -204,4 +204,19 @@ public class RefreshTokenService {
         response.addCookie(cookie);
         log.info("RefreshToken 쿠키 삭제 완료");
     }
+
+    /**
+     * JSESSIONID 쿠키 삭제
+     * @param response
+     */
+    public void deleteJSESSIONIDTokenCookie(HttpServletResponse response) {
+        Cookie cookie = new Cookie("JSESSIONID", null);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true);
+        cookie.setPath("/"); // 생성 시 설정한 경로와 동일해야 함
+        cookie.setMaxAge(0); // 쿠키 즉시 만료
+        cookie.setAttribute("SameSite", "Strict");
+        response.addCookie(cookie);
+        log.info("JSESSIONID 쿠키 삭제 완료");
+    }
 }
