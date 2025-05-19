@@ -88,6 +88,13 @@ interface RecommendResponse {
   isLiked: boolean;
 }
 
+// 게시글 수정용 인터페이스 (필요시 추가)
+export interface UpdateArticleRequest {
+  title: string;
+  content: string;
+  mcps: Mcps;
+}
+
 // 게시글 목록 조회 hook
 export const useArticleQuery = (params: ArticlesParams) => {
   return useQuery({
@@ -196,6 +203,31 @@ export const useRecommendArticle = (articleId: string) => {
       console.error('추천 처리 중 오류 발생:', error);
       // 오류 발생 시 사용자에게 토스트 메시지로 알림
       toast.error('게시글 추천 처리 중 오류가 발생했어요. 😢');
+    }
+  });
+};
+
+// 게시글 수정 hook
+export const useUpdateArticle = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string, data: UpdateArticleRequest }) => {
+      const response = await apiClient.put<ArticleDetailResponse>(`/articles/${id}`, data);
+      return response.data;
+    },
+    onSuccess: (data, variables) => {
+      // 캐시 무효화로 게시글 데이터 갱신
+      queryClient.invalidateQueries({ queryKey: ['article', variables.id] });
+      
+      // 목록 데이터도 갱신할 필요가 있으면 추가
+      queryClient.invalidateQueries({ queryKey: ['articles'] });
+      
+      toast.success("수정 완료! ✏️");
+    },
+    onError: (error) => {
+      toast.error("게시글 수정에 실패했어요. 😢");
+      console.error("게시글 수정 실패:", error);
     }
   });
 };
