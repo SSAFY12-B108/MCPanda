@@ -9,7 +9,7 @@ COPY gradlew .
 COPY gradlew.bat .
 
 # 의존성 파일들을 복사하여 의존성 다운로드 단계의 캐시를 활용합니다.
-COPY .gradle/wrapper ./gradle/wrapper
+COPY ./gradle/wrapper ./gradle/wrapper
 # RUN gradle clean build --no-daemon --refresh-dependencies # 의존성만 미리 다운로드하는 단계 (선택 사항)
 
 COPY src ./src
