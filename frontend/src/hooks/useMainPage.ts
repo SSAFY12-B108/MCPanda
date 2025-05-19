@@ -1,37 +1,23 @@
+import apiClient from '@/api/client';
 import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
+import { ArticlesResponse } from './useArticle'; // 공통 타입 재사용
 
-export interface Article {
-  articleId: string;
-  title: string;
-  mcps: string[];
-}
-//홈페이지 게시글 조회 
-// fetch 함수 export
-export const fetchMainArticles = async (): Promise<Article[]> => {
-  const response = await axios.get('/api/main');
-  return response.data;
+// 비동기 fetch 함수 (SSR/CSR 모두에서 사용 가능)
+export const fetchMainArticles = async (category: string, page = 1): Promise<ArticlesResponse> => {
+  const params = new URLSearchParams();
+  params.append('type', 'recommend'); // 추천 조합만 가져오기
+  params.append('page', page.toString());
+  if (category) params.append('category', category); // 카테고리 필터링
+  params.append('limit', '9'); // 페이지당 10개로 설정
+
+  const { data } = await apiClient.get(`/articles?${params.toString()}`);
+  return data;
 };
 
-// 쿼리 훅
-export const useMainPage = () => {
-  return useQuery({
-    queryKey: ['mainArticles'],
-    queryFn: fetchMainArticles,
-  });
-};
-
-
-// 홈페이지 게시글 카테고리별 fetch 함수
-export const fetchArticlesByCategory = async (category: string): Promise<Article[]> => {
-  const response = await axios.get(`/api/main/category/${category}`);
-  return response.data;
-};
-
-export const useMainPageByCategory = (category: string) => {
-  return useQuery({
-    queryKey: ['mainArticlesByCategory', category],
-    queryFn: () => fetchArticlesByCategory(category),
-    enabled: !!category, // category 선택됐을 때만 실행
-  });
-};
+  // 클라이언트 컴포넌트에서 사용하는 React Query hook
+  export const useMainArticles = (category: string, page = 1) => {
+    return useQuery({
+      queryKey: ['mainArticles', category, page],
+      queryFn: () => fetchMainArticles(category, page),
+    });
+  };
