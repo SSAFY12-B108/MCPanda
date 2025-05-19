@@ -52,7 +52,7 @@ export default function EditPage() {
 
   setTitle(data.title);
   setContent(data.content);
-  setSelectedTools(data.mcps);
+  setSelectedTools(Object.keys(data.mcps)); // ✅ 여기 수정
 }, [article, user]);
 
 const toggleTool = (tool: string) => {
