@@ -9,8 +9,8 @@ import Header from "@/components/Layout/Header";
 
 
 const toolsList = [
-  "Figma", "React", "Docker", "MongoDB", "Node.js",
-  "Vue.js", "Kubernetes", "AWS", "Spring Boot",
+  "Figma", "React", "Docker", "MongoDB", "NodeJs",
+  "VueJs", "Kubernetes", "AWS", "Spring Boot",
 ];
 
 export default function EditPage() {
