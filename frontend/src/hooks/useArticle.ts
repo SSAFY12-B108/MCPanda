@@ -100,7 +100,6 @@ export const useArticleQuery = (params: ArticlesParams) => {
   return useQuery({
     queryKey: ['articles', params],
     queryFn: async () => {
-      // 디버깅을 위한 로그 추가
       console.log('검색 파라미터:', params);
       
       const searchParams = new URLSearchParams();
@@ -123,7 +122,11 @@ export const useArticleQuery = (params: ArticlesParams) => {
       }
     },
     placeholderData: (previousData) => previousData,
-    staleTime: 1000 * 60 * 5,
+    // staleTime 축소 - 빠른 데이터 갱신을 위해
+    staleTime: 1000 * 30, // 30초로 축소
+    // 윈도우 포커스 및 마운트 시 리패치 활성화
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 };
 
