@@ -19,7 +19,7 @@ export default function LoginPage() {
   }, [isLoggedIn, router]);
 
   const handleLogin = useCallback((provider: "google" | "github") => {
-    window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/api/auth/oauth2/authorization/${provider}`;
+    window.location.href = `/api/auth/oauth2/authorization/${provider}`;
   }, []);
 
   return (

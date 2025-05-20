@@ -11,7 +11,7 @@ export default function CallbackPage() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/members/me`, {
+        const res = await fetch(`/api/members/me`, {
           method: "GET",
           credentials: "include", // ✅ 쿠키 포함해서 요청
         });
