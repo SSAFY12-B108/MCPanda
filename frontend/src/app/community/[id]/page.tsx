@@ -188,6 +188,16 @@ export default function Page() {
           </button>
         </div>
 
+        {/* 목록으로 돌아가는 버튼 */}
+        <div className="mt-8 flex justify-center">
+          <button
+            className="w-auto px-4 py-2 rounded-full border border-[#888888] text-[#888888] hover:bg-gray-100"
+            onClick={() => router.push("/community")}
+          >
+            목록으로 돌아가기
+          </button>
+        </div>
+
         {/* 댓글 섹션 */}
         <CommentSection comments={article.comments} />
       </div>
