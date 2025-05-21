@@ -31,7 +31,6 @@
 | **구분** | **도구** |
 | --- | --- |
 | IDE | Visual Studio Code |
-| 코드 품질 개선 툴 | SonarQube |
 | GPU 서버 | Colab |
 | Colab-백엔드 통신 서버 | ngrok + FastAPI |
 
@@ -39,7 +38,6 @@
 
 | **구분** | **도구** |
 | --- | --- |
-| 음성 생성 AI(TTS) | CSM-1B |
 | 감정파라미터 및 문맥 토크나이제이션 | BERT |
 | STT 모델 | whisper API |
 | AI 스크립트 생성 | Langchain |
@@ -52,45 +50,31 @@
 ```json
 {
   "name": "frontend",
+  "version": "0.1.0",
   "private": true,
-  "version": "0.0.0",
-  "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
   },
   "dependencies": {
-    "@reduxjs/toolkit": "^2.6.1",
-    "@tanstack/react-query": "^5.67.3",
-    "@tanstack/react-query-devtools": "^5.67.3",
-    "axios": "^1.8.3",
-    "chart.js": "^4.4.8",
-    "mic-recorder-to-mp3-fixed": "^2.2.2",
+    "@tanstack/react-query": "^5.75.0",
+    "axios": "^1.9.0",
+    "next": "15.3.1",
     "react": "^19.0.0",
-    "react-chartjs-2": "^5.3.0",
-    "react-dom": "^19.0.0",
-    "react-ga4": "^2.1.0",
-    "react-hotjar": "^6.3.1",
-    "react-intersection-observer": "^9.16.0",
-    "react-redux": "^9.2.0",
-    "react-router-dom": "^7.4.0"
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "@eslint/js": "^9.21.0",
-    "@types/node": "^22.13.10",
-    "@types/react": "^19.0.10",
-    "@types/react-dom": "^19.0.4",
-    "@vitejs/plugin-react": "^4.3.4",
-    "eslint": "^9.21.0",
-    "eslint-plugin-react-hooks": "^5.1.0",
-    "eslint-plugin-react-refresh": "^0.4.19",
-    "globals": "^15.15.0",
-    "typescript": "~5.7.2",
-    "typescript-eslint": "^8.24.1",
-    "vite": "^6.2.0",
-    "vite-plugin-pwa": "^0.21.1"
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "15.3.1",
+    "tailwindcss": "^4",
+    "typescript": "^5"
   }
 }
 ```
@@ -121,7 +105,6 @@
 | gtts | 2.5.4 |
 | pydub | 0.25.1 |
 | BeautifulSoup4 | 4.13.3 |
-| prometheus_client | 0.21.1 |
 | python-multipart | 0.0.7 |
 | email-validator | 2.1.0 |
 | Locust | 2.33.2 |
@@ -140,9 +123,6 @@
 | Nginx | 1.27.4 |
 | Docker | 28.0.1 |
 | Jenkins | 2.501 |
-| SonarQube | 9.9.8 |
-| Prometheus | 2.53.4 |
-| Grafana | 11.5.2 |
 
 ### 포트 설정
 
@@ -160,11 +140,13 @@ To                         Action      From
 --                         ------      ----
 22                         ALLOW       Anywhere                  
 80                         ALLOW       Anywhere                  
-443                        ALLOW       Anywhere 
-8000                       ALLOW       Anywhere
-8080                       ALLOW       Anywhere
-3000                       ALLOW       Anywhere
-...                        ...         ...
+44                         ALLOW       Anywhere                  
+8989                       ALLOW       Anywhere                  
+443                        ALLOW       Anywhere                  
+443/tcp                    ALLOW       Anywhere                  
+9000                       ALLOW       Anywhere                  
+50000                      ALLOW       Anywhere                  
+8888/tcp                   ALLOW       Anywhere                       
 ```
 
 #### 포트 활성화/비활성화
@@ -207,59 +189,36 @@ sudo ufw delete allow 8080  # 기존 허용 규칙 삭제
 ### Backend
 
 ```bash
-# 보안 설정
-JWT_SECRET_KEY=
-REFRESH_TOKEN_SECRET_KEY=
-JWT_ALGORITHM=
-ACCESS_TOKEN_EXPIRE_MINUTES=
-REFRESH_TOKEN_EXPIRE_DAYS=
+MONGODB_URI=
 
-# 데이터베이스 설정
-MONGODB_URL=
-MONGODB_DB_NAME=
-
-# CORS 설정
-CORS_ORIGINS=
-
-# 프론트엔드 URL
-FRONTEND_URL=
-
-# 네이버 OAuth 설정
-NAVER_CLIENT_ID=
-NAVER_CLIENT_SECRET=
-NAVER_REDIRECT_URI=
-
-# Google OAuth 설정
+# Google Login
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
+GOOGLE_SCOPE=
+
+# GitHub Login
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
+GITHUB_SCOPE=
+
 GOOGLE_REDIRECT_URI=
+GITHUB_REDIRECT_URI=
 
-# AWS S3 설정
-AWS_ACCESS_KEY_ID=
-AWS_SECRET_ACCESS_KEY=
-AWS_REGION=
-AWS_S3_BUCKET_NAME=
+# jwt config
+JWT_SECRET=
+# AccessToken
+JWT_ACCESS_TOKEN_VALIDITY_IN_SECONDS=
+# RefreshToken
+JWT_REFRESH_TOKEN_VALIDITY_IN_SECONDS=
 
-# AI API 설정 
-GEMINI_API_KEYS=
-GROQ_API_KEYS=
-
-# Redis 설정
-REDIS_URL=
-CELERY_RESULT_BACKEND=
+# development frontend url
+APP_FRONTEND_URL=
 ```
 
 ### Frontend
 
 ```bash
-# URL 설정
-VITE_API_URL=
-
-# Google Analytics 설정
-VITE_GA_TRACKING_ID=
-
-# HotJar 설정
-VITE_HOTJAR_ID=
+NEXT_PUBLIC_API_URL=
 ```
 
 ## 🚀 4. 배포 가이드
@@ -493,7 +452,7 @@ volumes:
 --------------------------------------------------------
 
 #### Jenkins 파이프라인 코드
-- Jenkinsfile.ci
+- Jenkinsfile
 ```Jenkinsfile
 pipeline {
     agent any
