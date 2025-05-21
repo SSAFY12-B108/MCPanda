@@ -26,6 +26,8 @@ public class MCPDataInitializer implements CommandLineRunner {
     public void run(String... args) throws Exception {
         // AWS MCP 데이터 초기화
         initAwsMcpData();
+        // ETC MCP 데이터 초기화
+        initEtcMcpData();
     }
 
     private void initAwsMcpData() {
@@ -83,9 +85,58 @@ public class MCPDataInitializer implements CommandLineRunner {
         mcpServers.put("awslabs.cost-analysis-mcp-server", awsCost);
 
         // AWS MCP 엔티티 생성 및 저장
-        MCP awsMcp = new MCP("AWS", mcpServers);
+        MCP awsMcp = new MCP("AWS", "Infrastructure", mcpServers);
         mcpRepository.save(awsMcp);
         
         System.out.println("AWS MCP 데이터가 초기화되었습니다.");
+    }
+
+    /**
+     * ETC 카테고리의 MCP 데이터 초기화
+     */
+    private void initEtcMcpData() {
+        // ETC MCP가 이미 존재하는지 확인
+        if (mcpRepository.findByName("ETC").isPresent()) {
+            System.out.println("ETC MCP 데이터가 이미 존재합니다. 초기화를 건너뜁니다.");
+            return;
+        }
+
+        // ETC 하위 MCP 서버 구성
+        // 1. misc-tools-mcp-server 설정
+        Map<String, Object> miscTools = new HashMap<>();
+        miscTools.put("command", "uvx");
+        miscTools.put("args", new String[]{"othertools.misc-tools-mcp-server@latest"});
+        Map<String, String> miscToolsEnv = new HashMap<>();
+        miscToolsEnv.put("FASTMCP_LOG_LEVEL", "ERROR");
+        miscTools.put("env", miscToolsEnv);
+
+        // 2. monitoring-mcp-server 설정
+        Map<String, Object> monitoring = new HashMap<>();
+        monitoring.put("command", "uvx");
+        monitoring.put("args", new String[]{"othertools.monitoring-mcp-server@latest"});
+        Map<String, String> monitoringEnv = new HashMap<>();
+        monitoringEnv.put("FASTMCP_LOG_LEVEL", "ERROR");
+        monitoring.put("env", monitoringEnv);
+
+        // 3. analytics-mcp-server 설정
+        Map<String, Object> analytics = new HashMap<>();
+        analytics.put("command", "uvx");
+        analytics.put("args", new String[]{"othertools.analytics-mcp-server@latest"});
+        Map<String, Object> analyticsEnv = new HashMap<>();
+        analyticsEnv.put("DATA_SOURCE", "your-data-source");
+        analyticsEnv.put("OUTPUT_FORMAT", "json");
+        analytics.put("env", analyticsEnv);
+
+        // MCP 서버 맵 구성
+        Map<String, Object> etcMcpServers = new HashMap<>();
+        etcMcpServers.put("othertools.misc-tools-mcp-server", miscTools);
+        etcMcpServers.put("othertools.monitoring-mcp-server", monitoring);
+        etcMcpServers.put("othertools.analytics-mcp-server", analytics);
+
+        // ETC MCP 엔티티 생성 및 저장
+        MCP etcMcp = new MCP("ETC", "ETC", etcMcpServers);
+        mcpRepository.save(etcMcp);
+        
+        System.out.println("ETC MCP 데이터가 초기화되었습니다.");
     }
 }
