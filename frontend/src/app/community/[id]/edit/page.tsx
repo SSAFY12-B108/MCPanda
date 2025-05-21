@@ -6,11 +6,8 @@ import { useArticleDetail, useUpdateArticle, Mcps, McpServers } from "@/hooks/us
 import useAuthStore from "@/stores/authStore";
 import toast from 'react-hot-toast';
 import Header from "@/components/Layout/Header";
+import useMcps, { McpCategory, Mcp } from "@/hooks/useMcps";
 
-const toolsList = [
-  "Figma", "React", "Docker", "MongoDB", "NodeJs",
-  "VueJs", "Kubernetes", "AWS", "Spring Boot",
-];
 
 export default function EditPage() {
   const { id } = useParams();
@@ -19,17 +16,22 @@ export default function EditPage() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [selectedTools, setSelectedTools] = useState<string[]>([]);
+  const [openCategories, setOpenCategories] = useState<Set<string>>(new Set());
   const [errors, setErrors] = useState({ title: "", tools: "", content: "" });
 
   // 현재 로그인한 사용자 정보 가져오기
   const { user } = useAuthStore();
 
   // TanStack Query를 사용하여 게시글 데이터 가져오기
-  const { 
-    data: articleResponse, 
-    isLoading, 
-    isError 
+  const {
+    data: articleResponse,
+    isLoading: isArticleLoading,
+    isError: isArticleError
   } = useArticleDetail(id as string);
+
+  // Fetch MCP data
+  const { data: mcpCategories, isLoading: isMcpsLoading, isError: isMcpsError } = useMcps();
+
 
   // 게시글 수정 mutation 가져오기
   const updateArticleMutation = useUpdateArticle();
@@ -37,11 +39,11 @@ export default function EditPage() {
   // 데이터 불러와서 상태에 세팅
   useEffect(() => {
     // articleResponse가 있는지 확인
-    if (!articleResponse || !user) return;
+    if (!articleResponse || !user || !mcpCategories) return;
 
     // articleResponse.article에서 author에 접근
     const isAuthor = articleResponse.article.author?.memberId === user.id;
-    
+
     if (!isAuthor) {
       toast.error("수정 권한이 없어요.");
       router.replace("/community");
@@ -52,11 +54,23 @@ export default function EditPage() {
     const { title, content, mcps } = articleResponse.article;
     setTitle(title);
     setContent(content);
-    
-    // mcps 객체에서 카테고리 이름만 추출하여 설정
-    const mcpCategories = Object.keys(mcps || {});
-    setSelectedTools(mcpCategories);
-  }, [articleResponse, user, router]);
+
+    // mcps 객체에서 선택된 MCP 이름만 추출하여 설정
+    const initiallySelectedTools = Object.keys(mcps || {});
+    setSelectedTools(initiallySelectedTools);
+
+    // Open categories that contain initially selected tools
+    const categoriesToOpen = new Set<string>();
+    mcpCategories.forEach(categoryData => {
+      categoryData.mcps.forEach(mcp => {
+        if (initiallySelectedTools.includes(mcp.name)) {
+          categoriesToOpen.add(categoryData.category);
+        }
+      });
+    });
+    setOpenCategories(categoriesToOpen);
+
+  }, [articleResponse, user, router, mcpCategories]);
 
   // useCallback으로 toggleTool 감싸기
   const toggleTool = useCallback((tool: string) => {
@@ -65,16 +79,16 @@ export default function EditPage() {
       if (prev.includes(tool)) {
         return prev.filter((t) => t !== tool);
       }
-      
+
       // 아직 3개 미만 선택된 경우 추가
       if (prev.length < 3) {
         return [...prev, tool];
       }
-      
+
       // 3개 이상인 경우 상태 변화 없이 반환
       return prev;
     });
-    
+
     // setState 외부에서 toast 처리
     if (!selectedTools.includes(tool) && selectedTools.length >= 3) {
       // setTimeout으로 다음 렌더링 사이클로 이동
@@ -86,7 +100,7 @@ export default function EditPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // 유효성 검사
     const newErrors = { title: "", tools: "", content: "" };
     let hasError = false;
@@ -111,7 +125,7 @@ export default function EditPage() {
 
     // McpServer와 관련된 타입 정의를 사용하여 mcps 데이터 구조 생성
     const mcpsObject: Mcps = {};
-    
+
     selectedTools.forEach(tool => {
       // 각 도구에 대한 MCP 카테고리 생성
       mcpsObject[tool] = {
@@ -128,7 +142,7 @@ export default function EditPage() {
           content,
           mcps: mcpsObject
         }
-      }, 
+      },
       {
         // 여기에 onSuccess 콜백 추가
         onSuccess: () => {
@@ -139,7 +153,7 @@ export default function EditPage() {
     );
   };
 
-  if (isLoading) {
+  if (isArticleLoading || isMcpsLoading) {
     return (
       <div className="flex justify-center p-20">
         <div className="animate-pulse">로딩 중...</div>
@@ -147,10 +161,10 @@ export default function EditPage() {
     );
   }
 
-  if (isError) {
+  if (isArticleError || isMcpsError) {
     return (
       <div className="flex justify-center p-20 text-red-500">
-        게시글을 불러오는데 실패했습니다.
+        데이터를 불러오는데 실패했습니다.
       </div>
     );
   }
@@ -174,22 +188,46 @@ export default function EditPage() {
           <label className="block mb-2 font-semibold text-gray-800">
             MCP 선택 <span className="text-sm text-gray-500">(최대 3개)</span>
           </label>
-          <div className="flex flex-wrap gap-2">
-            {toolsList.map((tool) => (
-              <button
-                key={tool}
-                type="button"
-                onClick={() => toggleTool(tool)}
-                className={`px-3 py-1 text-sm rounded-full
-                ${selectedTools.includes(tool)
-                    ? "bg-[#E1F3FF] text-[#0095FF]"
-                    : "bg-[#EDEDED] text-[#555555]"
-                  }`}
+          {mcpCategories && mcpCategories.map((categoryData: McpCategory) => (
+            <div key={categoryData.category} className="mb-4">
+              <h3
+                className="text-md font-semibold text-gray-700 p-3 cursor-pointer flex justify-between items-center border-b border-gray-300"
+                onClick={() => setOpenCategories((prev: Set<string>) => {
+                  const newSet = new Set(prev);
+                  if (newSet.has(categoryData.category)) {
+                    newSet.delete(categoryData.category);
+                  } else {
+                    newSet.add(categoryData.category);
+                  }
+                  return newSet;
+                })}
               >
-                {tool}
-              </button>
-            ))}
-          </div>
+                {categoryData.category}
+                <span className={`transform transition-transform duration-200 text-lg px-1 ${openCategories.has(categoryData.category) ? 'rotate-180' : ''}`}>
+                  ∨
+                </span>
+              </h3>
+              {openCategories.has(categoryData.category) && (
+                <div className="flex flex-wrap gap-2 p-3">
+                  {categoryData.mcps.map((mcp: Mcp) => (
+                    <button
+                      key={mcp.id}
+                      type="button"
+                      onClick={() => toggleTool(mcp.name)}
+                      className={`px-3 py-1 text-sm rounded-full
+                      ${
+                        selectedTools.includes(mcp.name)
+                          ? "bg-[#E1F3FF] text-[#0095FF]"
+                          : "bg-[#EDEDED] text-[#555555]"
+                      }`}
+                    >
+                      {mcp.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
           {errors.tools && <p className="text-red-500 text-sm">{errors.tools}</p>}
         </div>
 
