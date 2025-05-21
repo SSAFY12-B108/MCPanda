@@ -4,10 +4,15 @@ import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import ReactMarkdown from "react-markdown";
 import toast from "react-hot-toast";
+import type { ComponentProps } from "react";
 
 // ✅ 코드블럭 커스텀 렌더링
 const markdownComponents = {
-  code({ inline, className = "", children }: any) {
+  code({
+    inline,
+    className = "",
+    children,
+  }: ComponentProps<"code"> & { inline?: boolean }) {
     const language = className.replace("language-", "") || "plaintext";
     const codeText = String(children).trim();
 
@@ -43,12 +48,9 @@ const markdownComponents = {
     }
 
     // ❌ json이 아니면 그냥 일반 텍스트 출력
-    return (
-        <span>{children}</span>
-    );
+    return <span>{children}</span>;
   },
 };
-
 
 const Chatbot = () => {
   const [messages, setMessages] = useState([
@@ -99,12 +101,14 @@ const Chatbot = () => {
       const data = await resp.json();
       const reply = data?.response || "죄송해요, 답변을 가져오지 못했어요.";
       setMessages((prev) => [...prev, { type: "bot", text: reply }]);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "알 수 없는 오류가 발생했어요.";
+      console.error("Chat error:", message);
       setMessages((prev) => [
         ...prev,
         { type: "bot", text: "⚠️ 잠시 후 다시 시도해주세요." },
       ]);
-      console.error("Chat error:", err);
     } finally {
       setIsLoading(false);
     }
@@ -114,7 +118,6 @@ const Chatbot = () => {
     setIsOpen(!isOpen);
   };
 
-  console.log('data', messages);
   return (
     <>
       {isOpen ? (
@@ -135,10 +138,11 @@ const Chatbot = () => {
             {messages.map((msg, i) => (
               <div
                 key={i}
-                className={`w-fit max-w-full px-3 py-2 rounded-lg break-words whitespace-pre-wrap ${msg.type === "bot"
+                className={`w-fit max-w-full px-3 py-2 rounded-lg break-words whitespace-pre-wrap ${
+                  msg.type === "bot"
                     ? "bg-white border border-gray-200 text-gray-800"
                     : "bg-blue-100 text-gray-900 ml-auto text-right"
-                  }`}
+                }`}
               >
                 <ReactMarkdown components={markdownComponents}>
                   {msg.text}
@@ -168,7 +172,6 @@ const Chatbot = () => {
                 }
               }}
             />
-
             <button
               className="bg-blue-100 p-2 rounded-md disabled:opacity-50"
               onClick={handleSend}
