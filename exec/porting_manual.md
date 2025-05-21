@@ -31,7 +31,6 @@
 | **구분** | **도구** |
 | --- | --- |
 | IDE | Visual Studio Code |
-| 코드 품질 개선 툴 | SonarQube |
 | GPU 서버 | Colab |
 | Colab-백엔드 통신 서버 | ngrok + FastAPI |
 
@@ -39,7 +38,6 @@
 
 | **구분** | **도구** |
 | --- | --- |
-| 음성 생성 AI(TTS) | CSM-1B |
 | 감정파라미터 및 문맥 토크나이제이션 | BERT |
 | STT 모델 | whisper API |
 | AI 스크립트 생성 | Langchain |
@@ -52,45 +50,31 @@
 ```json
 {
   "name": "frontend",
+  "version": "0.1.0",
   "private": true,
-  "version": "0.0.0",
-  "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
   },
   "dependencies": {
-    "@reduxjs/toolkit": "^2.6.1",
-    "@tanstack/react-query": "^5.67.3",
-    "@tanstack/react-query-devtools": "^5.67.3",
-    "axios": "^1.8.3",
-    "chart.js": "^4.4.8",
-    "mic-recorder-to-mp3-fixed": "^2.2.2",
+    "@tanstack/react-query": "^5.75.0",
+    "axios": "^1.9.0",
+    "next": "15.3.1",
     "react": "^19.0.0",
-    "react-chartjs-2": "^5.3.0",
-    "react-dom": "^19.0.0",
-    "react-ga4": "^2.1.0",
-    "react-hotjar": "^6.3.1",
-    "react-intersection-observer": "^9.16.0",
-    "react-redux": "^9.2.0",
-    "react-router-dom": "^7.4.0"
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "@eslint/js": "^9.21.0",
-    "@types/node": "^22.13.10",
-    "@types/react": "^19.0.10",
-    "@types/react-dom": "^19.0.4",
-    "@vitejs/plugin-react": "^4.3.4",
-    "eslint": "^9.21.0",
-    "eslint-plugin-react-hooks": "^5.1.0",
-    "eslint-plugin-react-refresh": "^0.4.19",
-    "globals": "^15.15.0",
-    "typescript": "~5.7.2",
-    "typescript-eslint": "^8.24.1",
-    "vite": "^6.2.0",
-    "vite-plugin-pwa": "^0.21.1"
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "15.3.1",
+    "tailwindcss": "^4",
+    "typescript": "^5"
   }
 }
 ```
@@ -121,7 +105,6 @@
 | gtts | 2.5.4 |
 | pydub | 0.25.1 |
 | BeautifulSoup4 | 4.13.3 |
-| prometheus_client | 0.21.1 |
 | python-multipart | 0.0.7 |
 | email-validator | 2.1.0 |
 | Locust | 2.33.2 |
@@ -140,9 +123,6 @@
 | Nginx | 1.27.4 |
 | Docker | 28.0.1 |
 | Jenkins | 2.501 |
-| SonarQube | 9.9.8 |
-| Prometheus | 2.53.4 |
-| Grafana | 11.5.2 |
 
 ### 포트 설정
 
@@ -160,11 +140,13 @@ To                         Action      From
 --                         ------      ----
 22                         ALLOW       Anywhere                  
 80                         ALLOW       Anywhere                  
-443                        ALLOW       Anywhere 
-8000                       ALLOW       Anywhere
-8080                       ALLOW       Anywhere
-3000                       ALLOW       Anywhere
-...                        ...         ...
+44                         ALLOW       Anywhere                  
+8989                       ALLOW       Anywhere                  
+443                        ALLOW       Anywhere                  
+443/tcp                    ALLOW       Anywhere                  
+9000                       ALLOW       Anywhere                  
+50000                      ALLOW       Anywhere                  
+8888/tcp                   ALLOW       Anywhere                       
 ```
 
 #### 포트 활성화/비활성화
@@ -277,78 +259,54 @@ sudo apt install docker-ce docker-ce-cli containerd.io docker-compose-plugin
 ##### Backend/Dockerfile
 
 ```dockerfile
-FROM gradle:7.5-jdk17 AS builder
+FROM python:3.11-slim
 
 WORKDIR /app
 
-COPY build.gradle .
-COPY settings.gradle .
-# 필요한 경우 gradlew 및 gradlew.bat 파일도 복사합니다.
-COPY gradlew .
-COPY gradlew.bat .
+# 필요한 시스템 패키지 설치 (Git, ffmpeg, Python 개발 패키지, ALSA 포함)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    git \
+    ffmpeg \
+    python3-dev \
+    libasound2-dev && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
-# 의존성 파일들을 복사하여 의존성 다운로드 단계의 캐시를 활용합니다.
-COPY .gradle/wrapper ./gradle/wrapper
-# RUN gradle clean build --no-daemon --refresh-dependencies # 의존성만 미리 다운로드하는 단계 (선택 사항)
+# 종속성 파일 복사(캐싱을 위해 먼저 복사)
+COPY requirements.txt .
 
-COPY src ./src
+# pip 업그레이드 후 의존성 설치 (안정성 향상을 위해)
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir-r requirements.txt 
 
-RUN gradle clean build --no-daemon -x test
+# 애플리케이션 코드 복사
+COPY . .
 
-
-FROM openjdk:17-jre-slim
-
-WORKDIR /app
-
-COPY --from=builder /app/build/libs/MCPanda-*.jar /app/app.jar
-
+# 실행 설정
 EXPOSE 8080
-
-ENTRYPOINT ["java", "-jar", "app.jar"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
 ##### Frontend/Dockerfile
 
 ```dockerfile
-# 1. 빌드 단계
-FROM node:22-alpine AS builder
+FROM node:22-alpine AS build
 
 WORKDIR /app
 
-COPY package*.json ./
+# 패키지 파일 먼저 복사
+COPY package.json package-lock.json ./
 
-RUN npm install
+# 의존성 설치
+RUN npm ci
 
+# 코드 복사
 COPY . .
 
 RUN npm run build
 
-# 2. 프로덕션 실행 단계
-FROM nginx:stable-alpine
-
-WORKDIR /app
-
-ENV NODE_ENV=production
-
-# standalone output에서 필요한 파일들 복사
-# /app/public 폴더 복사
-COPY --from=builder /app/public ./public
-# /app/.next/standalone 폴더를 현재 디렉토리(/app)로 복사
-COPY --from=builder /app/.next/standalone ./
-# /app/.next/static 폴더를 현재 디렉토리의 .next 폴더 아래로 복사
-COPY --from=builder /app/.next/static ./.next/static
-
-# (선택 사항이지만 권장) 보안을 위해 non-root 사용자 사용
-# Docker 이미지에 해당 사용자가 미리 정의되어 있거나, 여기서 생성해야 합니다.
-# 공식 Next.js 이미지는 nextjs 사용자를 제공합니다. (FROM node:20-alpine 대신 FROM nextjs/node:20-alpine 사용 고려)
-# RUN addgroup --system --gid 1001 nodejs
-# RUN adduser --system --uid 1001 nextjs
-# USER nextjs
-
-EXPOSE 3000
-
-# standalone output은 server.js 파일을 직접 실행합니다.
-CMD ["node", "server.js"]
+CMD ["/bin/sh", "-c", "cp -r dist/* /usr/share/nginx/html/ && tail -f /dev/null"]
 ```
 
 ##### nginx/Dockerfile
@@ -1000,102 +958,63 @@ certbot --nginx -d your-domain.com
 #### Nginx 설정 파일(nginx/conf.d/default.conf)
 
 ```nginx
+# <로컬 프로젝트 경로>/nginx/default.conf
 server {
-    listen 80;
-    server_name omypic.store www.omypic.store;
-    
-    # Let's Encrypt 인증 챌린지 경로
-    location /.well-known/acme-challenge/ {
-        root /var/www/certbot;
-    }
-    
-    # HTTP -> HTTPS 리다이렉트
-    location / {
-        return 301 https://$host$request_uri;
-    }
+    listen 80; # Nginx가 외부에서 80번 포트로 요청을 받음
+    server_name mcpanda.co.kr www.mcpanda.co.kr;
+
+    # HTTP -> HTTPS 리다이렉트 설정 (권장)
+    return 301 https://$host$request_uri;
+
 }
 
-# HTTPS 서버 설정
 server {
     listen 443 ssl;
-    server_name omypic.store www.omypic.store;
-    
-    # SSL 인증서 경로
-    ssl_certificate /etc/letsencrypt/live/omypic.store/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/omypic.store/privkey.pem;
-    
-    # SSL 설정 최적화
+    server_name mcpanda.co.kr www.mcpanda.co.kr; # 실제 도메인으로 변경
+
+    # Certbot으로 발급받은 인증서 파일 경로 지정
+    ssl_certificate /etc/letsencrypt/live/mcpanda.co.kr/fullchain.pem; # 마운트된 경로
+    ssl_certificate_key /etc/letsencrypt/live/mcpanda.co.kr/privkey.pem; # 마운트된 경로
+
+    # 권장 SSL/TLS 설정 (선택 사항, 보안 강화)
     ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_prefer_server_ciphers on;
-    ssl_ciphers HIGH:!aNULL:!MD5;
-    ssl_session_timeout 10m;
-    ssl_session_cache shared:SSL:10m;
-    
-    # 프론트엔드 정적 파일 서빙 - current 심볼릭 링크 사용
+    ssl_ciphers 'TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384';
+    ssl_prefer_server_ciphers off;
+
     location / {
-        root /usr/share/nginx/current;  # blue 또는 green을 가리키는 심볼릭 링크
-        index index.html;
-        try_files $uri $uri/ /index.html;  # SPA를 위한 설정
+        # "frontend"는 Docker 네트워크 내에서 Next.js 컨테이너를 가리키는 이름입니다.
+        # (Docker Compose 사용 시 서비스 이름, 단독 실행 시 컨테이너 이름 또는 IP)
+        # 여기서는 Docker Compose를 사용할 것이므로 서비스 이름을 사용합니다.
+        proxy_pass http://frontend:3000; # Next.js 앱은 내부적으로 3000번 포트 사용
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    # 캐싱 설정
-    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg)$ {
-        root /usr/share/nginx/current;
-        expires 1y;
-        add_header Cache-Control "public, max-age=31536000, immutable";
-
-        # 로깅 최소화로 서버 부하 감소
-        access_log off;
-        log_not_found off;
-    }
-
-    location ~* \.(png|jpg|jpeg)$ {
-        root /usr/share/nginx/current;
-        add_header Vary Accept;
-
-        # 브라우저가 webP를 지원하고 webP 버전이 존재하면 webP 제공
-        if($http_accept ~* "webp") {
-            set $webp_exist "${document_root}$uri.webp";
-            if(-f $webp_exist) {
-                rewrite (.*) $1.webp break;
-            }
-        }
-    }
-    # 404 에러 처리
-    error_page 404 /index.html;
-
-    # gzip 압축 활성화
-    gzip on;
-    gzip_types text/plain text/css application/json application/javascript text/xml application/xml+rss text/javascript;
-    
-    # 백엔드 API 요청 프록시
     location /api/ {
-        proxy_pass http://backend;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header Service-Worker-Allowed "";
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_read_timeout 90;
-    }
-    
-    # Swagger UI, ReDoc 등 API 문서 관련 경로
-    location ~ ^/(docs|redoc|openapi.json) {
-        proxy_pass http://backend/$1;
-        proxy_http_version 1.1;
+        # "backend"는 Docker 네트워크 내에서 Spring Boot 컨테이너를 가리키는 이름입니다.
+        # 백엔드 앱은 내부적으로 8080번 포트를 사용합니다.
+        proxy_pass http://backend:8080;
+
+        # 프록시 설정 (프론트엔드와 유사하게 설정)
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+
+        # API 요청에 필요한 추가 설정 (선택 사항)
+        # proxy_connect_timeout 60s;
+        # proxy_send_timeout 60s;
+        # proxy_read_timeout 60s;
+        # client_max_body_size 10M; # 파일 업로드 등을 위해 필요 시 설정
     }
-    
-    # 에러 페이지
-    error_page 500 502 503 504 /50x.html;
-    location = /50x.html {
-        root /usr/share/nginx/current;
-        internal;
-    }
+
+    access_log /var/log/nginx/access.log;
+    error_log /var/log/nginx/error.log;
 }
 ```
 
