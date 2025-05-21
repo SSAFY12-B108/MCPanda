@@ -32,7 +32,6 @@
 | --- | --- |
 | IDE | Visual Studio Code |
 | GPU 서버 | Colab |
-| Colab-백엔드 통신 서버 | ngrok + FastAPI |
 
 ### AI
 
@@ -81,38 +80,24 @@
 
 ### Backend
 
-| 프로그램 | 버전 |
-| --- | --- |
-| Python | 3.11.11 |
-| AWS SDK (boto3) | 1.37.19 |
-| botocore | 1.37.19 |
-| FastAPI | 0.115.12 |
-| Starlette | 0.46.1 |
-| uvicorn | 0.34.0 |
-| httpx | 0.28.1 |
-| LangChain | 0.3.21 |
-| langchain_core | 0.3.48 |
-| langchain_google_genai | 2.1.1 |
-| langchain_groq | 0.3.1 |
-| motor | 3.7.0 |
-| PyMongo | 4.11.3 |
-| PyJWT | 2.10.1 |
-| NumPy | 2.2.4 |
-| pandas | 2.2.3 |
-| Pydantic | 2.10.6 |
-| pydantic_core | 2.27.2 |
-| pydantic_settings | 2.8.1 |
-| gtts | 2.5.4 |
-| pydub | 0.25.1 |
-| BeautifulSoup4 | 4.13.3 |
-| python-multipart | 0.0.7 |
-| email-validator | 2.1.0 |
-| Locust | 2.33.2 |
-| APScheduler | 3.11.0 |
-| Redis | 5.2.1 |
-| Celery | 5.5.0 |
-| Flower | 2.0.1 |
-| MongoDB | 6.0.21 |
+| 구성 요소 | 라이브러리 / 프레임워크 | 버전 |
+|----------|--------------------------|-------|
+| Java | OpenJDK | 17 |
+| Spring Boot | spring-boot-starter-* | 3.4.5 |
+| Dependency Management | io.spring.dependency-management | 1.1.7 |
+| Web | spring-boot-starter-web | Spring Boot 관리 |
+| Security | spring-boot-starter-security<br>spring-security-oauth2-jose | Spring Boot 관리 |
+| Data | spring-boot-starter-data-mongodb | Spring Boot 관리 |
+| Validation | spring-boot-starter-validation | Spring Boot 관리 |
+| OAuth2 Client | spring-boot-starter-oauth2-client | Spring Boot 관리 |
+| Web Services | spring-boot-starter-web-services | Spring Boot 관리 |
+| Dev Tools | spring-boot-devtools | Spring Boot 관리 |
+| JWT | jjwt-api / jjwt-impl / jjwt-jackson | 0.11.5 |
+| Swagger / OpenAPI | springdoc-openapi-starter-webmvc-ui | 2.8.8 |
+| Swagger Annotations | swagger-annotations-jakarta | 2.2.30 |
+| Lombok | lombok | Gradle 최신 버전 사용 |
+| Test | spring-boot-starter-test<br>spring-security-test | Spring Boot 관리 |
+| JUnit | junit-platform-launcher | Spring Boot 관리 |
 
 ### Infrastructure
 
@@ -173,15 +158,11 @@ sudo ufw delete allow 8080  # 기존 허용 규칙 삭제
 | HTTP 접속 | 80 | 80 |
 | HTTPS 접속 | 443 | 443 |
 | Nginx | 80, 443 | 80, 443 |
-| React | 80 | 80 |
-| Grafana | 3000 | 3000 |
-| Flower | 5555 | 5555 |
-| Redis | 6379 | 6379 |
+| React | 3000 | 3000 |
+| SpringBoot | 8080 | 8080 |
 | FastAPI | 8000 | 8000 |
-| SonarQube | 9005 | 9000 |
-| Prometheus | 9090 | 9090 |
 | Gerrit | 8989 | 8989 |
-| Jenkins | 8080, 50000 | 8080, 50000 |
+| Jenkins | 8888, 50000 | 8080, 50000 |
 | Portainer | 9000, 50001 | 9000, 50000 |
 
 ## ⚙️ 3. 환경 변수 설정
