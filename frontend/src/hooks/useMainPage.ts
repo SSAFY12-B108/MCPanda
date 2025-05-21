@@ -8,7 +8,7 @@ export const fetchMainArticles = async (category: string, page = 1): Promise<Art
   params.append('type', 'recommend'); // 추천 조합만 가져오기
   params.append('page', page.toString());
   if (category) params.append('category', category); // 카테고리 필터링
-  params.append('limit', '9'); // 페이지당 10개로 설정
+  params.append('size', '9'); // 페이지당 10개로 설정
 
   const { data } = await apiClient.get(`/articles?${params.toString()}`);
   return data;
