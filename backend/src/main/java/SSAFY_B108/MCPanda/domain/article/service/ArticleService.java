@@ -193,6 +193,15 @@ public class ArticleService {
                 possibleCategories.add("Back");
             }
             
+            if (searchCategory.equalsIgnoreCase("etc")) {
+                possibleCategories.add("ETC");
+                possibleCategories.add("etc");
+                possibleCategories.add("Others");
+                possibleCategories.add("OTHER");
+                possibleCategories.add("OTHERS");
+                possibleCategories.add("기타");
+            }
+            
             System.out.println("검색할 카테고리들: " + possibleCategories);
             
             // 모든 가능한 카테고리로 MCP 검색
