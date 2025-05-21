@@ -277,54 +277,78 @@ sudo apt install docker-ce docker-ce-cli containerd.io docker-compose-plugin
 ##### Backend/Dockerfile
 
 ```dockerfile
-FROM python:3.11-slim
+FROM gradle:7.5-jdk17 AS builder
 
 WORKDIR /app
 
-# 필요한 시스템 패키지 설치 (Git, ffmpeg, Python 개발 패키지, ALSA 포함)
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    git \
-    ffmpeg \
-    python3-dev \
-    libasound2-dev && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+COPY build.gradle .
+COPY settings.gradle .
+# 필요한 경우 gradlew 및 gradlew.bat 파일도 복사합니다.
+COPY gradlew .
+COPY gradlew.bat .
 
-# 종속성 파일 복사(캐싱을 위해 먼저 복사)
-COPY requirements.txt .
+# 의존성 파일들을 복사하여 의존성 다운로드 단계의 캐시를 활용합니다.
+COPY .gradle/wrapper ./gradle/wrapper
+# RUN gradle clean build --no-daemon --refresh-dependencies # 의존성만 미리 다운로드하는 단계 (선택 사항)
 
-# pip 업그레이드 후 의존성 설치 (안정성 향상을 위해)
-RUN pip install --upgrade pip && \
-    pip install --no-cache-dir-r requirements.txt 
+COPY src ./src
 
-# 애플리케이션 코드 복사
-COPY . .
+RUN gradle clean build --no-daemon -x test
 
-# 실행 설정
+
+FROM openjdk:17-jre-slim
+
+WORKDIR /app
+
+COPY --from=builder /app/build/libs/MCPanda-*.jar /app/app.jar
+
 EXPOSE 8080
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+ENTRYPOINT ["java", "-jar", "app.jar"]
 ```
 
 ##### Frontend/Dockerfile
 
 ```dockerfile
-FROM node:22-alpine AS build
+# 1. 빌드 단계
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-# 패키지 파일 먼저 복사
-COPY package.json package-lock.json ./
+COPY package*.json ./
 
-# 의존성 설치
-RUN npm ci
+RUN npm install
 
-# 코드 복사
 COPY . .
 
 RUN npm run build
 
-CMD ["/bin/sh", "-c", "cp -r dist/* /usr/share/nginx/html/ && tail -f /dev/null"]
+# 2. 프로덕션 실행 단계
+FROM nginx:stable-alpine
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+# standalone output에서 필요한 파일들 복사
+# /app/public 폴더 복사
+COPY --from=builder /app/public ./public
+# /app/.next/standalone 폴더를 현재 디렉토리(/app)로 복사
+COPY --from=builder /app/.next/standalone ./
+# /app/.next/static 폴더를 현재 디렉토리의 .next 폴더 아래로 복사
+COPY --from=builder /app/.next/static ./.next/static
+
+# (선택 사항이지만 권장) 보안을 위해 non-root 사용자 사용
+# Docker 이미지에 해당 사용자가 미리 정의되어 있거나, 여기서 생성해야 합니다.
+# 공식 Next.js 이미지는 nextjs 사용자를 제공합니다. (FROM node:20-alpine 대신 FROM nextjs/node:20-alpine 사용 고려)
+# RUN addgroup --system --gid 1001 nodejs
+# RUN adduser --system --uid 1001 nextjs
+# USER nextjs
+
+EXPOSE 3000
+
+# standalone output은 server.js 파일을 직접 실행합니다.
+CMD ["node", "server.js"]
 ```
 
 ##### nginx/Dockerfile
