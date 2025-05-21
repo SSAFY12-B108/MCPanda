@@ -476,62 +476,60 @@ services:
 --------------------------------------------------------
 
 #### Jenkins 파이프라인 코드
-- Jenkinsfile.ci
+- Jenkinsfile
 ```Jenkinsfile
 pipeline {
     agent any
-
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
-        DOCKER_REGISTRY = "kst1040"
-        BACKEND_IMAGE = "${DOCKER_REGISTRY}/omypic-backend"
-        FRONTEND_IMAGE = "${DOCKER_REGISTRY}/omypic-frontend"
-        
-        GIT_COMMIT_SHORT = sh(
-            script: "printf \$(git rev-parse --short HEAD)",
-            returnStdout: true
-        )
-
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials') // Docker Hub 인증 정보 ID
+        DOCKER_REGISTRY = "kimjuheee"
+        BACKEND_IMAGE = "${DOCKER_REGISTRY}/mcpanda-backend" // 백엔드 Docker 이미지 이름
+        FRONTEND_IMAGE = "${DOCKER_REGISTRY}/mcpanda-frontend" // 프론트엔드 Docker 이미지 이름
         GIT_AUTHOR_ID = "${env.gitlabUserName}"
         GIT_AUTHOR_EMAIL = "${env.gitlabUserEmail ?: 'Not set'}"
+        NEXT_PUBLIC_API_URL = 'https://mcpanda.co.kr'
+        DEPLOY_DIR = '/home/ubuntu/S12P31B108'
     }
-
+    
+    tools {
+        nodejs 'NodeJS-LTS'
+    }
+    
     stages {
-        stage('Checkout') {
+        stage('Checkout (Initial)') {
             steps {
                 checkout([
                     $class: 'GitSCM',
-                    branches: [[name: "dev"]],
-                    userRemoteConfigs: [[url: 'https://lab.ssafy.com/s12-ai-speech-sub1/S12P21B107.git', credentialsId: 'gitlab-user-pwd']]
+                    branches: [[name: "dev"]], // 빌드 대상 브랜치
+                    userRemoteConfigs: [[url: 'https://lab.ssafy.com/s12-final/S12P31B108.git', credentialsId: 'gitlab-user']] // GitLab 인증 정보 ID
                 ])
+                
+                sh 'pwd' // 현재 작업 디렉토리 출력 추가
+                sh 'git status' // Git 상태 확인 추가
+                
+                script {
+                    env.GIT_COMMIT = sh(script: 'git rev-parse HEAD', returnStdout: true).trim()
+                
+                    if (env.GIT_COMMIT && env.GIT_COMMIT.length() >= 8) {
+                        env.GIT_COMMIT_SHORT = env.GIT_COMMIT[0..7]
+                    } else {
+                        env.GIT_COMMIT_SHORT = 'unknown'
+                    }
+                
+                    echo "Debug: Full GIT_COMMIT value: ${env.GIT_COMMIT}"
+                    echo "Checked out commit (Short): ${env.GIT_COMMIT_SHORT}"
+                }
             }
         }
 
         stage('Check Target Branch') {
             steps {
                 script {
-                    if (env.gitlabTargetBranch != 'dev' && !env.GIT_BRANCH.endsWith('dev')) {
-                        error("This pipeline only runs for pushes targeting the dev branch")
+                    if (env.gitlabTargetBranch != 'dev'&& env.BRANCH_NAME != 'dev') {
+                        error("This pipeline only runs for pushes targeting the dev branch. (Current target: ${env.gitlabTargetBranch ?: env.BRANCH_NAME})")
+                     } else {
+                         echo "Target branch is dev. Proceeding."
                     }
-                }
-            }
-        }
-
-        stage('Prepare Frontend Environment') {
-            when { changeset "Frontend/**" }
-            steps {
-                withCredentials([
-                    string(credentialsId: 'vite-api-url', variable: 'VITE_API_URL'),
-                    string(credentialsId: 'vite-ga-tracking-id', variable: 'VITE_GA_TRACKING_ID'),
-                    string(credentialsId: 'vite-hotjar-id', variable: 'VITE_HOTJAR_ID'),
-                ]) {
-                    sh '''
-                        cd Frontend
-                        cp .env.production.template .env
-                        sed -i "s|VITE_API_URL=|VITE_API_URL=${VITE_API_URL}|g" .env
-                        sed -i "s|VITE_GA_TRACKING_ID=|VITE_GA_TRACKING_ID=${VITE_GA_TRACKING_ID}|g" .env
-                        sed -i "s|VITE_HOTJAR_ID=|VITE_HOTJAR_ID=${VITE_HOTJAR_ID}|g" .env
-                    '''
                 }
             }
         }
@@ -539,21 +537,43 @@ pipeline {
         stage('Build & Push Images') {
             parallel {
                 stage('Backend') {
-                    when { changeset "Backend/**" }
+                    when { changeset "backend/**" }
                     steps {
                         script {
-                            buildAndPushImage("${BACKEND_IMAGE}", "./Backend")
+                            sh 'cd backend'
+                            buildAndPushImage("${BACKEND_IMAGE}", "./backend")
                         }
                     }
                 }
-
                 stage('Frontend') {
-                    when { changeset "Frontend/**" }
+                    when { changeset "frontend/**" }
                     steps {
                         script {
-                            buildAndPushImage("${FRONTEND_IMAGE}", "./Frontend")
+                            buildAndPushImage("${FRONTEND_IMAGE}", "./frontend")
                         }
                     }
+                }
+            }
+        }
+
+        stage('Deploy to Target') {
+            steps {
+                withCredentials([
+                    sshUserPrivateKey(credentialsId: 'my-ssh-credentials', keyFileVariable: 'SSH_KEY')
+                ]) {
+                    sh """
+                    ssh -v -i \$SSH_KEY -o StrictHostKeyChecking=no ubuntu@43.203.241.152 "
+                    set -e
+                    
+                    docker logout || true 
+    
+                    cd ${DEPLOY_DIR}
+                    docker image pull ${BACKEND_IMAGE}:latest
+                    docker image pull ${FRONTEND_IMAGE}:latest
+                    docker compose down
+                    docker compose up -d
+                    "
+                """
                 }
             }
         }
@@ -563,10 +583,10 @@ pipeline {
         success {
             script {
                 mattermostSend(
-                    color: 'good', 
+                    color: 'good',
                     message: "빌드 성공: ${env.JOB_NAME} #${env.BUILD_NUMBER} by ${env.GIT_AUTHOR_ID}(${env.GIT_AUTHOR_EMAIL})\n(<${env.BUILD_URL}|Details>)",
-                    endpoint: 'https://meeting.ssafy.com/hooks/gd11st38kbd1znej9kh3ftbg6o',
-                    channel: 'B107-Jenkins'
+                    endpoint: 'https://meeting.ssafy.com/hooks/8z4cpfyamtygipmzmhoz4d83jw',
+                    channel: 'B108-Jenkins'
                 )
             }
             echo 'CI Pipeline succeeded! Images have been built and pushed to Docker Hub.'
@@ -574,16 +594,18 @@ pipeline {
         failure {
             script {
                 mattermostSend(
-                    color: 'danger', 
+                    color: 'danger',
                     message: "빌드 실패: ${env.JOB_NAME} #${env.BUILD_NUMBER} by ${env.GIT_AUTHOR_ID}(${env.GIT_AUTHOR_EMAIL})\n(<${env.BUILD_URL}|Details>)",
-                    endpoint: 'https://meeting.ssafy.com/hooks/gd11st38kbd1znej9kh3ftbg6o',
-                    channel: 'B107-Jenkins'
+                    endpoint: 'https://meeting.ssafy.com/hooks/8z4cpfyamtygipmzmhoz4d83jw',
+                    channel: 'B108-Jenkins'
                 )
             }
             echo 'CI Pipeline failed! Check the logs for details.'
         }
         always {
-            sh 'docker image prune -f'
+            script {
+                sh 'docker image prune -f'
+            }
             cleanWs()
         }
     }
@@ -592,166 +614,10 @@ pipeline {
 def buildAndPushImage(String imageName, String context) {
     docker.withRegistry('https://index.docker.io/v1/', 'dockerhub-credentials') {
         sh """
-            docker build -t ${imageName}:${GIT_COMMIT_SHORT} -t ${imageName}:latest ${context}
-            docker push ${imageName}:${GIT_COMMIT_SHORT}
+            docker build -t ${imageName}:${env.GIT_COMMIT_SHORT} -t ${imageName}:latest ${context}
+            docker push ${imageName}:${env.GIT_COMMIT_SHORT}
             docker push ${imageName}:latest
         """
-    }
-}
-```
-
-- Jenkinsfile.cd
-```Jenkinsfile
-def sshCommand(command) {
-    withCredentials([sshUserPrivateKey(credentialsId: 'ec2-ssh-key', keyFileVariable: 'SSH_KEY')]) {
-        return sh(
-            script: "ssh -i \$SSH_KEY -o StrictHostKeyChecking=no \$EC2_USER@\$EC2_HOST '${command}'",
-            returnStdout: true
-        ).trim()
-    }
-}
-
-pipeline {
-    agent any
-    environment {
-        EC2_HOST = credentials('EC2_SERVER_IP')
-        EC2_USER = 'ubuntu'
-        DEPLOY_DIR = '/home/ubuntu/OmyPIC'
-        DOCKER_REGISTRY = "kst1040"
-        BACKEND_IMAGE = "${DOCKER_REGISTRY}/omypic-backend"
-        FRONTEND_IMAGE = "${DOCKER_REGISTRY}/omypic-frontend"
-        DEPLOYMENT_SUCCESS = 'false'
-    }
-    
-    stages {
-        stage('Check MR Target') {
-            steps {
-                script {
-                    if(env.gitlabTargetBranch != 'dev') {
-                        error("This pipeline only runs for MRs targeting the dev branch")
-                    }
-                }
-            }
-        }
-        
-        stage('Determine Target Environment') {
-            steps {
-                script {
-                    // 스크립트 실행 권한 부여
-                    sshCommand("cd ${DEPLOY_DIR} && chmod +x health-check.sh switch-script.sh")
-                    
-                    // 현재 환경 확인
-                    def checkCmd = "cd ${DEPLOY_DIR}/nginx/conf.d && cat upstream.conf | grep -q 'blue' && echo 'blue' || echo 'green'"
-                    def currentEnv = sshCommand(checkCmd)
-                    def targetEnv = (currentEnv == "blue") ? "green" : "blue"
-                    
-                    // 환경 변수에 값 설정
-                    env.CURRENT_ENV = currentEnv
-                    env.TARGET_ENV = targetEnv
-                    
-                    echo "현재 활성 환경: ${env.CURRENT_ENV}, 배포 타겟 환경: ${env.TARGET_ENV}"
-                }
-            }
-        }
-        
-        stage('Deploy to Target') {
-            steps {
-                script {
-                    sshCommand("""
-                        cd ${DEPLOY_DIR}
-                        docker image pull ${BACKEND_IMAGE}:latest
-                        docker image pull ${FRONTEND_IMAGE}:latest
-                        docker compose -p omypic-${env.TARGET_ENV} -f docker-compose-${env.TARGET_ENV}.yml up -d
-                    """)
-                }
-            }
-        }
-        
-        stage('Health Check') {
-            steps {
-                script {
-                    echo "배포 환경이 안정화될 때까지 30초 대기 중..."
-                    sleep(time: 30, unit: 'SECONDS')
-            
-                    // 컨테이너 상태 확인
-                    def containerStatus = sshCommand("cd ${DEPLOY_DIR} && docker ps | grep omypic-${env.TARGET_ENV}")
-                    echo "컨테이너 상태: ${containerStatus}"
-            
-                    // health-check.sh 출력 내용 확인
-                    def healthOutput = sshCommand("cd ${DEPLOY_DIR} && ./health-check.sh ${env.TARGET_ENV}")
-                    echo "헬스 체크 출력: ${healthOutput}"
-            
-                    // 종료 코드 확인
-                    def healthStatus = sshCommand("cd ${DEPLOY_DIR} && ./health-check.sh ${env.TARGET_ENV} >/dev/null 2>&1; echo \$?")
-                    echo "헬스 체크 상태 코드: ${healthStatus}"
-            
-                    if (healthStatus.trim() == "0") {
-                        echo "헬스 체크 성공: 대상 환경(${env.TARGET_ENV})이 정상 작동합니다."  
-                    } else {
-                        error "대상 환경(${env.TARGET_ENV})의 헬스 체크가 실패했습니다. 트래픽 전환을 취소합니다."
-                    }
-                }
-            }
-        }
-        
-        stage('Switch Traffic') {
-            steps {
-                script {
-                    // sshCommand 헬퍼 대신 표준 sh 단계 사용
-                    withCredentials([sshUserPrivateKey(credentialsId: 'ec2-ssh-key', keyFileVariable: 'SSH_KEY')]) {
-                        // 스크립트 마지막의 '; echo $?' 제거
-                        // sh 단계가 ssh 명령어의 종료 코드를 직접 확인하여 실패 처리함
-                        sh "ssh -i \$SSH_KEY -o StrictHostKeyChecking=no \$EC2_USER@\$EC2_HOST 'cd ${DEPLOY_DIR} && CURRENT_ENV=${env.CURRENT_ENV} TARGET_ENV=${env.TARGET_ENV} ./switch-script.sh'"
-                    }
-                    // 위 sh 단계가 성공적으로 완료되면 (스크립트가 exit 0으로 종료되면) 아래 라인 실행
-                    echo "트래픽 전환 성공: ${env.TARGET_ENV} 환경으로 전환 완료"
-                    env.DEPLOYMENT_SUCCESS = 'true'
-                    // sh 단계 실패 시 자동으로 에러가 발생하고 post { failure } 블록으로 넘어감
-                }
-            }
-        }
-        
-        stage('Cleanup') {
-            steps {
-                sshCommand("docker image prune -f")
-            }
-        }
-        
-        stage('Update MR Status') {
-            steps {
-                updateGitlabCommitStatus name: 'build', state: 'success'
-                addGitLabMRComment comment: "📦 배포 완료: ${env.BUILD_URL}\n- 환경: ${env.TARGET_ENV}"
-            }
-        }
-    }
-    
-    post {
-        success {
-            echo "배포 성공: ${env.TARGET_ENV} 환경으로 전환 완료"
-            updateGitlabCommitStatus name: 'build', state: 'success'
-        }
-        
-        failure {
-            echo "배포 실패: 문제 발생"
-            updateGitlabCommitStatus name: 'build', state: 'failed'
-            
-            script {
-                // 안전하게 변수 확인
-                if (env.TARGET_ENV && env.DEPLOYMENT_SUCCESS != 'true') {
-                    echo "새로 배포된 ${env.TARGET_ENV} 환경에 문제가 발생했습니다."
-                    
-                    // 트래픽 전환 전에 실패한 경우만 대상 환경 컨테이너 정리
-                    sshCommand("cd ${DEPLOY_DIR} && docker compose -p omypic-${env.TARGET_ENV} -f docker-compose-${env.TARGET_ENV}.yml down --remove-orphans || echo '실패한 대상 환경(${env.TARGET_ENV}) 정리에 실패했거나 이미 중지됨'")
-                    echo "${env.TARGET_ENV} 환경(${env.TARGET_PROJECT})을 중지/정리했습니다." // 로그 메시지도 명확하게
-                }
-                
-                addGitLabMRComment comment: "❌ 배포 실패: ${env.BUILD_URL}\n원인을 확인하세요."
-            }
-        }
-        
-        always {
-            cleanWs()
-        }
     }
 }
 ```
