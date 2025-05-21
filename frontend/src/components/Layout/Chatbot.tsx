@@ -7,7 +7,7 @@ import toast from "react-hot-toast";
 
 // ✅ 코드블럭 커스텀 렌더링
 const markdownComponents = {
-  code({ node, inline, className = "", children, ...props }: any) {
+  code({ inline, className = "", children }: any) {
     const language = className.replace("language-", "") || "plaintext";
     const codeText = String(children).trim();
 
