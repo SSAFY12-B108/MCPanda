@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import apiClient from '@/api/client';
 import Header from "@/components/Layout/Header";
 import { useRouter } from "next/navigation";
@@ -33,6 +33,7 @@ export default function Write() {
   });
 
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
 
@@ -63,12 +64,13 @@ export default function Write() {
     },
     onSuccess: () => {
       toast.success("작성 완료! 🎉");
+      queryClient.invalidateQueries({ queryKey: ['articles'] }); // Invalidate articles query cache
       router.push('/community');
     },
-    onError: () => {
+    onError: (error) => {
       toast.error("게시글 등록에 실패했어요. 😢");
       console.log(title, content, selectedTools);
-      console.log('게시글 업로드 실패', errors);
+      console.error('게시글 업로드 실패', error);
     },
   });
 

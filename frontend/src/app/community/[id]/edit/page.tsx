@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useArticleDetail, useUpdateArticle, Mcps, McpServers } from "@/hooks/useArticle";
 import useAuthStore from "@/stores/authStore";
 import toast from 'react-hot-toast';
 import Header from "@/components/Layout/Header";
-
 
 const toolsList = [
   "Figma", "React", "Docker", "MongoDB", "NodeJs",
@@ -59,15 +58,31 @@ export default function EditPage() {
     setSelectedTools(mcpCategories);
   }, [articleResponse, user, router]);
 
-  const toggleTool = (tool: string) => {
-    setSelectedTools((prev) =>
-      prev.includes(tool)
-        ? prev.filter((t) => t !== tool)
-        : prev.length < 3
-          ? [...prev, tool]
-          : (toast.error("최대 3개까지 선택 가능해요!"), prev)
-    );
-  };
+  // useCallback으로 toggleTool 감싸기
+  const toggleTool = useCallback((tool: string) => {
+    setSelectedTools((prev) => {
+      // 이미 선택된 도구인 경우 제거
+      if (prev.includes(tool)) {
+        return prev.filter((t) => t !== tool);
+      }
+      
+      // 아직 3개 미만 선택된 경우 추가
+      if (prev.length < 3) {
+        return [...prev, tool];
+      }
+      
+      // 3개 이상인 경우 상태 변화 없이 반환
+      return prev;
+    });
+    
+    // setState 외부에서 toast 처리
+    if (!selectedTools.includes(tool) && selectedTools.length >= 3) {
+      // setTimeout으로 다음 렌더링 사이클로 이동
+      setTimeout(() => {
+        toast.error("최대 3개까지 선택 가능해요!");
+      }, 0);
+    }
+  }, [selectedTools]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -192,8 +207,9 @@ export default function EditPage() {
           <button
             type="submit"
             className="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600"
+            disabled={updateArticleMutation.isPending}
           >
-            수정하기
+            {updateArticleMutation.isPending ? '수정 중...' : '수정하기'}
           </button>
         </div>
       </form>

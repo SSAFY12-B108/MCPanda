@@ -215,35 +215,35 @@ export default function CommunityClient() {
               </button>
 
               {/* Page numbers */}
-              {Array.from({ length: Math.min(5, data.totalPages) }, (_, i) => {
-                // 페이지 번호 계산 (중앙 정렬)
-                let pageNum = queryParams.page - 2 + i;
+              {(() => {
+                const totalPages = data.totalPages;
+                const currentPage = queryParams.page;
+                const maxPageButtons = 10;
 
-                // 처음 또는 끝 부분에서 조정
-                if (queryParams.page < 3) {
-                  pageNum = i + 1;
-                } else if (queryParams.page > data.totalPages - 2) {
-                  pageNum = data.totalPages - 4 + i;
+                let startPage = Math.max(1, currentPage - Math.floor(maxPageButtons / 2));
+                const endPage = Math.min(totalPages, startPage + maxPageButtons - 1);
+
+                // Adjust startPage if endPage hits totalPages but we don't have maxPageButtons
+                if (endPage - startPage + 1 < maxPageButtons) {
+                  startPage = Math.max(1, endPage - maxPageButtons + 1);
                 }
 
-                // 페이지 범위 조정
-                if (pageNum > 0 && pageNum <= data.totalPages) {
-                  return (
-                    <button
-                      key={pageNum}
-                      className={`px-4 py-2 rounded-md ${
-                        pageNum === queryParams.page
-                          ? "bg-[#1E88E5] text-white"
-                          : "hover:bg-gray-200 text-gray-700"
-                      }`}
-                      onClick={() => handlePageChange(pageNum)}
-                    >
-                      {pageNum}
-                    </button>
-                  );
-                }
-                return null;
-              })}
+                const pageNumbers = Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
+
+                return pageNumbers.map((pageNum) => (
+                  <button
+                    key={pageNum}
+                    className={`px-4 py-2 rounded-md ${
+                      pageNum === currentPage
+                        ? "bg-[#1E88E5] text-white"
+                        : "hover:bg-gray-200 text-gray-700"
+                    }`}
+                    onClick={() => handlePageChange(pageNum)}
+                  >
+                    {pageNum}
+                  </button>
+                ));
+              })()}
 
               {/* Right arrow */}
               <button
