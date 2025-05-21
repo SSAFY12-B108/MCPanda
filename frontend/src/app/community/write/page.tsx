@@ -6,31 +6,22 @@ import Header from "@/components/Layout/Header";
 import { useRouter } from "next/navigation";
 import useAuthStore from "@/stores/authStore";
 import toast from 'react-hot-toast';
-
-
-const toolsList = [
-  "Figma",
-  "React",
-  "Docker",
-  "MongoDB",
-  "NodeJs",
-  "VueJs",
-  "Kubernetes",
-  "AWS",
-  "Spring Boot",
-];
+import useMcps, { McpCategory, Mcp } from "@/hooks/useMcps";
 
 
 export default function Write() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [selectedTools, setSelectedTools] = useState<string[]>([]);
+  const [openCategories, setOpenCategories] = useState<Set<string>>(new Set());
 
   const [errors, setErrors] = useState({
     title: "",
     tools: "",
     content: "",
   });
+
+  const { data: mcpCategories, isLoading, isError } = useMcps();
 
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -98,8 +89,8 @@ export default function Write() {
     setErrors(newErrors);
 
     if (!hasError && isLoggedIn) {
-      createArticle.mutate(); // 글 생성 
-    } 
+      createArticle.mutate(); // 글 생성
+    }
 
     else if (!isLoggedIn) {
       alert("로그인 후 작성할 수 있어요!");
@@ -126,29 +117,54 @@ export default function Write() {
           )}
         </div>
 
-        {/* 툴 선택 */}
+        {/* MCP 선택 */}
         <div className="mb-6">
           <label className="block mb-2 font-semibold text-gray-800">
-            MCP 선택 
+            MCP 선택
             <span className="text-xs text-gray-500">(최대 3개 선택)</span>
           </label>
-          <div className="flex flex-wrap gap-2">
-            {toolsList.map((tool) => (
-              <button
-                key={tool}
-                type="button"
-                onClick={() => toggleTool(tool)}
-                className={`px-3 py-1 text-sm rounded-full
-                ${
-                  selectedTools.includes(tool)
-                    ? "bg-[#E1F3FF] text-[#0095FF]"
-                    : "bg-[#EDEDED] text-[#555555]"
-                }`}
+          {isLoading && <p>Loading MCPs...</p>}
+          {isError && <p>Error loading MCPs.</p>}
+          {mcpCategories && mcpCategories.map((categoryData: McpCategory) => (
+            <div key={categoryData.category} className="mb-4">
+              <h3
+                className="text-md font-semibold text-gray-700 p-3 cursor-pointer flex justify-between items-center border-b border-gray-300"
+                onClick={() => setOpenCategories((prev: Set<string>) => {
+                  const newSet = new Set(prev);
+                  if (newSet.has(categoryData.category)) {
+                    newSet.delete(categoryData.category);
+                  } else {
+                    newSet.add(categoryData.category);
+                  }
+                  return newSet;
+                })}
               >
-                {tool}
-              </button>
-            ))}
-          </div>
+                {categoryData.category}
+                <span className={`transform transition-transform duration-200 text-lg px-1 ${openCategories.has(categoryData.category) ? 'rotate-180' : ''}`}>
+                  ∨
+                </span>
+              </h3>
+              {openCategories.has(categoryData.category) && (
+                <div className="flex flex-wrap gap-2 p-3">
+                  {categoryData.mcps.map((mcp: Mcp) => (
+                    <button
+                      key={mcp.id}
+                      type="button"
+                      onClick={() => toggleTool(mcp.name)}
+                      className={`px-3 py-1 text-sm rounded-full
+                      ${
+                        selectedTools.includes(mcp.name)
+                          ? "bg-[#E1F3FF] text-[#0095FF]"
+                          : "bg-[#EDEDED] text-[#555555]"
+                      }`}
+                    >
+                      {mcp.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
           {errors.tools && (
             <p className="text-red-500 text-sm mt-1">{errors.tools}</p>
           )}
