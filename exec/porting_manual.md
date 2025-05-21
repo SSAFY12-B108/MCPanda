@@ -207,59 +207,36 @@ sudo ufw delete allow 8080  # 기존 허용 규칙 삭제
 ### Backend
 
 ```bash
-# 보안 설정
-JWT_SECRET_KEY=
-REFRESH_TOKEN_SECRET_KEY=
-JWT_ALGORITHM=
-ACCESS_TOKEN_EXPIRE_MINUTES=
-REFRESH_TOKEN_EXPIRE_DAYS=
+MONGODB_URI=
 
-# 데이터베이스 설정
-MONGODB_URL=
-MONGODB_DB_NAME=
-
-# CORS 설정
-CORS_ORIGINS=
-
-# 프론트엔드 URL
-FRONTEND_URL=
-
-# 네이버 OAuth 설정
-NAVER_CLIENT_ID=
-NAVER_CLIENT_SECRET=
-NAVER_REDIRECT_URI=
-
-# Google OAuth 설정
+# Google Login
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
+GOOGLE_SCOPE=
+
+# GitHub Login
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
+GITHUB_SCOPE=
+
 GOOGLE_REDIRECT_URI=
+GITHUB_REDIRECT_URI=
 
-# AWS S3 설정
-AWS_ACCESS_KEY_ID=
-AWS_SECRET_ACCESS_KEY=
-AWS_REGION=
-AWS_S3_BUCKET_NAME=
+# jwt config
+JWT_SECRET=
+# AccessToken
+JWT_ACCESS_TOKEN_VALIDITY_IN_SECONDS=
+# RefreshToken
+JWT_REFRESH_TOKEN_VALIDITY_IN_SECONDS=
 
-# AI API 설정 
-GEMINI_API_KEYS=
-GROQ_API_KEYS=
-
-# Redis 설정
-REDIS_URL=
-CELERY_RESULT_BACKEND=
+# development frontend url
+APP_FRONTEND_URL=
 ```
 
 ### Frontend
 
 ```bash
-# URL 설정
-VITE_API_URL=
-
-# Google Analytics 설정
-VITE_GA_TRACKING_ID=
-
-# HotJar 설정
-VITE_HOTJAR_ID=
+NEXT_PUBLIC_API_URL=
 ```
 
 ## 🚀 4. 배포 가이드
