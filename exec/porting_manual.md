@@ -37,10 +37,11 @@
 
 | **구분** | **도구** |
 | --- | --- |
-| 감정파라미터 및 문맥 토크나이제이션 | BERT |
-| STT 모델 | whisper API |
-| AI 스크립트 생성 | Langchain |
-| AI 피드백 생성 | Gemini 2.0 Flash |
+| LLM | Gemma-3B (4bit QLoRA 파인튜닝) |
+| 파인튜닝 | Unsloth 사용 (QLoRA 기반) |
+| 추론 서버 | FastAPI + uvicorn (로컬 REST API) |
+| RAG 구조 | FAISS (유사도 검색) + BM25 (재정렬), MongoDB |
+| 임베딩 모델 | all-MiniLM-L6-v2 (from SentenceTransformers) |
 
 ## 💻 2. 개발 환경
 
