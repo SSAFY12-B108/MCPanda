@@ -30,7 +30,7 @@
 
 | **구분** | **도구** |
 | --- | --- |
-| IDE | Visual Studio Code |
+| IDE | Visual Studio Code, IntelliJ |
 | GPU 서버 | Colab |
 
 ### AI
