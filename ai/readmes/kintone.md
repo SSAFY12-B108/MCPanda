@@ -1,0 +1,286 @@
+---
+Title: MCP Tool - kintone
+Source: https://raw.githubusercontent.com/kintone/mcp-server/main/README.md
+---
+
+# kintone MCP Server
+
+[![ci][ci-badge]][ci-url]
+[![npm version][npm-badge]][npm-url]
+[![License: MIT][license-badge]][license-url]
+[![Install MCP Server][cursor-badge]][cursor-url]
+
+[ci-badge]: https://github.com/kintone/mcp-server/actions/workflows/ci.yaml/badge.svg
+[ci-url]: https://github.com/kintone/mcp-server/actions/workflows/ci.yaml
+[npm-badge]: https://badge.fury.io/js/@kintone%2Fmcp-server.svg?icon=si%3Anpm
+[npm-url]: https://badge.fury.io/js/@kintone%2Fmcp-server
+[license-badge]: https://img.shields.io/badge/License-Apache_2.0-blue.svg
+[license-url]: LICENSE
+[cursor-badge]: https://cursor.com/deeplink/mcp-install-dark.svg
+[cursor-url]: https://cursor.com/en/install-mcp?name=kintone&config=eyJjb21tYW5kIjoiZG9ja2VyIiwiZW52Ijp7IktJTlRPTkVfQkFTRV9VUkwiOiJodHRwczovLyhzdWJkb21haW4pLmN5Ym96dS5jb20iLCJLSU5UT05FX1VTRVJOQU1FIjoiKHVzZXJuYW1lKSIsIktJTlRPTkVfUEFTU1dPUkQiOiIocGFzc3dvcmQpIn0sImFyZ3MiOlsicnVuIiwiLWkiLCItLXJtIiwiLWUiLCJLSU5UT05FX0JBU0VfVVJMIiwiLWUiLCJLSU5UT05FX1VTRVJOQU1FIiwiLWUiLCJLSU5UT05FX1BBU1NXT1JEIiwiZ2hjci5pby9raW50b25lL21jcC1zZXJ2ZXI6bGF0ZXN0Il19
+
+<!--
+NOTE: Cursorのインストールリンク生成は scripts/generate-cursor-install-link.js で生成している
+-->
+
+日本語 | [English](README_en.md)
+
+kintoneの公式ローカルMCPサーバーです。
+
+<!-- NOTE: TOCはpnpm doc:update-tocで自動生成されます。 -->
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
+- [インストール](#%E3%82%A4%E3%83%B3%E3%82%B9%E3%83%88%E3%83%BC%E3%83%AB)
+  - [MCPB (Claude Desktop用パッケージ)](#mcpb-claude-desktop%E7%94%A8%E3%83%91%E3%83%83%E3%82%B1%E3%83%BC%E3%82%B8)
+  - [Dockerコンテナイメージ](#docker%E3%82%B3%E3%83%B3%E3%83%86%E3%83%8A%E3%82%A4%E3%83%A1%E3%83%BC%E3%82%B8)
+  - [npmパッケージ](#npm%E3%83%91%E3%83%83%E3%82%B1%E3%83%BC%E3%82%B8)
+- [利用方法](#%E5%88%A9%E7%94%A8%E6%96%B9%E6%B3%95)
+  - [設定ファイルのパスの例](#%E8%A8%AD%E5%AE%9A%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%81%AE%E3%83%91%E3%82%B9%E3%81%AE%E4%BE%8B)
+  - [設定ファイルの内容の例](#%E8%A8%AD%E5%AE%9A%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%81%AE%E5%86%85%E5%AE%B9%E3%81%AE%E4%BE%8B)
+- [設定](#%E8%A8%AD%E5%AE%9A)
+  - [設定オプション一覧](#%E8%A8%AD%E5%AE%9A%E3%82%AA%E3%83%97%E3%82%B7%E3%83%A7%E3%83%B3%E4%B8%80%E8%A6%A7)
+  - [プロキシ設定](#%E3%83%97%E3%83%AD%E3%82%AD%E3%82%B7%E8%A8%AD%E5%AE%9A)
+- [ツール一覧](#%E3%83%84%E3%83%BC%E3%83%AB%E4%B8%80%E8%A6%A7)
+- [ドキュメント](#%E3%83%89%E3%82%AD%E3%83%A5%E3%83%A1%E3%83%B3%E3%83%88)
+- [使用上の注意](#%E4%BD%BF%E7%94%A8%E4%B8%8A%E3%81%AE%E6%B3%A8%E6%84%8F)
+  - [`kintone-download-file`ツールの注意点](#kintone-download-file%E3%83%84%E3%83%BC%E3%83%AB%E3%81%AE%E6%B3%A8%E6%84%8F%E7%82%B9)
+- [制限事項](#%E5%88%B6%E9%99%90%E4%BA%8B%E9%A0%85)
+  - [レコード操作の制限](#%E3%83%AC%E3%82%B3%E3%83%BC%E3%83%89%E6%93%8D%E4%BD%9C%E3%81%AE%E5%88%B6%E9%99%90)
+  - [その他の制限](#%E3%81%9D%E3%81%AE%E4%BB%96%E3%81%AE%E5%88%B6%E9%99%90)
+- [トラブルシューティング](#%E3%83%88%E3%83%A9%E3%83%96%E3%83%AB%E3%82%B7%E3%83%A5%E3%83%BC%E3%83%86%E3%82%A3%E3%83%B3%E3%82%B0)
+  - [接続エラーになる場合](#%E6%8E%A5%E7%B6%9A%E3%82%A8%E3%83%A9%E3%83%BC%E3%81%AB%E3%81%AA%E3%82%8B%E5%A0%B4%E5%90%88)
+  - [認証エラーになる場合](#%E8%AA%8D%E8%A8%BC%E3%82%A8%E3%83%A9%E3%83%BC%E3%81%AB%E3%81%AA%E3%82%8B%E5%A0%B4%E5%90%88)
+  - [権限エラーになる場合](#%E6%A8%A9%E9%99%90%E3%82%A8%E3%83%A9%E3%83%BC%E3%81%AB%E3%81%AA%E3%82%8B%E5%A0%B4%E5%90%88)
+- [サポート方針](#%E3%82%B5%E3%83%9D%E3%83%BC%E3%83%88%E6%96%B9%E9%87%9D)
+- [コントリビューション](#%E3%82%B3%E3%83%B3%E3%83%88%E3%83%AA%E3%83%93%E3%83%A5%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3)
+- [プライバシー](#%E3%83%97%E3%83%A9%E3%82%A4%E3%83%90%E3%82%B7%E3%83%BC)
+- [ライセンス](#%E3%83%A9%E3%82%A4%E3%82%BB%E3%83%B3%E3%82%B9)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
+## インストール
+
+### MCPB (Claude Desktop用パッケージ)
+
+MCPBファイルは、Claude Desktopの拡張機能としてインストールできます。
+
+以下の手順でインストールしてください。
+
+1. [リリース一覧](https://github.com/kintone/mcp-server/releases) にアクセス
+2. 最新のリリースから `kintone-mcp-server.mcpb` をダウンロード
+3. Claude Desktopを開く
+4. 設定から「デスクトップアプリ」→「拡張機能」のページを開く
+5. ダウンロードした `kintone-mcp-server.mcpb` をClaude Desktopの画面にドラッグ＆ドロップ
+6. インストール確認ダイアログが表示されるので「インストール」を選択
+7. 設定ダイアログが表示されるので、必要な情報を入力する
+   - `Kintone Base URL`: kintoneのベースURL (例: `https://example.cybozu.com`)
+   - `Kintone Username`: kintoneのユーザー名
+   - `Kintone Password`: kintoneのパスワード
+
+### Dockerコンテナイメージ
+
+[Docker](https://www.docker.com/)のインストールが必要です。
+
+以下のコマンドでコンテナを起動できます。
+
+```shell
+docker run -i --rm \
+  -e KINTONE_BASE_URL=https://example.cybozu.com \
+  -e KINTONE_USERNAME=(username) \
+  -e KINTONE_PASSWORD=(password) \
+  ghcr.io/kintone/mcp-server
+```
+
+### npmパッケージ
+
+[Node.js](https://nodejs.org/)のインストールが必要です。
+
+以下のコマンドでインストールできます。
+
+```shell
+npm install -g @kintone/mcp-server
+```
+
+以下のコマンドでサーバーを起動できます。
+
+```shell
+kintone-mcp-server \
+  --base-url https://example.cybozu.com \
+  --username (username) \
+  --password (password)
+
+# `--base-url`、`--username`、`--password` は
+# 環境変数 `KINTONE_BASE_URL`、`KINTONE_USERNAME`、`KINTONE_PASSWORD` でも指定可能です。
+```
+
+## 利用方法
+
+MCPBファイルをインストールした場合、追加の手順は必要ありません。
+
+その他の利用方法では、設定ファイルを作成する必要があります。
+設定ファイルの作成方法の詳細は、利用するAIツールのドキュメントを参照してください。
+
+### 設定ファイルのパスの例
+
+- Claude Code: `.mcp.json` \[[ref](https://docs.anthropic.com/ja/docs/claude-code/mcp)]
+- Cursor: `.cursor/mcp.json` \[[ref](https://docs.cursor.com/ja/context/mcp)]
+
+### 設定ファイルの内容の例
+
+```json
+{
+  "mcpServers": {
+    "kintone": {
+      "type": "stdio",
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-e",
+        "KINTONE_BASE_URL",
+        "-e",
+        "KINTONE_USERNAME",
+        "-e",
+        "KINTONE_PASSWORD",
+        "ghcr.io/kintone/mcp-server:latest"
+      ],
+      "cwd": "${cwd}",
+      "env": {
+        "KINTONE_BASE_URL": "https://example.cybozu.com",
+        "KINTONE_USERNAME": "username",
+        "KINTONE_PASSWORD": "password"
+      }
+    }
+  }
+}
+```
+
+## 設定
+
+### 設定オプション一覧
+
+| コマンドライン引数      | 環境変数                      | 説明                                                       | 必須 |
+| ----------------------- | ----------------------------- | ---------------------------------------------------------- | ---- |
+| `--base-url`            | `KINTONE_BASE_URL`            | kintone環境のベースURL（例: `https://example.cybozu.com`） | ✓    |
+| `--username`            | `KINTONE_USERNAME`            | kintoneのログインユーザー名                                | ※1   |
+| `--password`            | `KINTONE_PASSWORD`            | kintoneのログインパスワード                                | ※1   |
+| `--api-token`           | `KINTONE_API_TOKEN`           | APIトークン（カンマ区切りで最大9個まで指定可能）           | ※1   |
+| `--basic-auth-username` | `KINTONE_BASIC_AUTH_USERNAME` | Basic認証のユーザー名                                      | -    |
+| `--basic-auth-password` | `KINTONE_BASIC_AUTH_PASSWORD` | Basic認証のパスワード                                      | -    |
+| `--pfx-file-path`       | `KINTONE_PFX_FILE_PATH`       | PFXファイルのパス（クライアント証明書認証用）              | -    |
+| `--pfx-file-password`   | `KINTONE_PFX_FILE_PASSWORD`   | PFXファイルのパスワード                                    | -    |
+| `--proxy`               | `HTTPS_PROXY`                 | HTTPSプロキシのURL（例: `http://proxy.example.com:8080`）  | -    |
+| `--attachments-dir`     | `KINTONE_ATTACHMENTS_DIR`     | ダウンロードしたファイルの保存先                           | -    |
+
+※1: `KINTONE_USERNAME` & `KINTONE_PASSWORD` または `KINTONE_API_TOKEN` のいずれかが必須
+
+**注意事項:**
+
+- クライアント証明書認証を使用する場合、URLのドメインは `.s.cybozu.com` となります（例: `https://example.s.cybozu.com`）
+- パスワード認証とAPIトークン認証を同時に指定した場合、パスワード認証が優先されます
+- コマンドライン引数と環境変数を同時に指定した場合、コマンドライン引数が優先されます
+- 詳細な認証設定については [認証設定ガイド](./docs/ja/authentication.md) を参照してください
+
+### プロキシ設定
+
+企業環境などでプロキシサーバーを経由する必要がある場合は、`HTTPS_PROXY` 環境変数を設定してください。
+
+```bash
+export HTTPS_PROXY="http://proxy.example.com:8080"
+
+# 認証が必要な場合
+export HTTPS_PROXY="http://username:password@proxy.example.com:8080"
+```
+
+## ツール一覧
+
+| ツール名                          | 説明                                   |
+| --------------------------------- | -------------------------------------- |
+| `kintone-get-apps`                | 複数のアプリ情報を取得                 |
+| `kintone-get-app`                 | 単一アプリの詳細情報を取得             |
+| `kintone-get-form-fields`         | アプリのフィールド設定を取得           |
+| `kintone-get-form-layout`         | アプリのフォームレイアウトを取得       |
+| `kintone-update-form-fields`      | アプリのフィールド設定を更新           |
+| `kintone-update-form-layout`      | アプリのフォームレイアウトを更新       |
+| `kintone-delete-form-fields`      | アプリのフィールドを削除               |
+| `kintone-get-process-management`  | プロセス管理設定を取得                 |
+| `kintone-get-app-deploy-status`   | アプリ設定の運用環境への反映状況確認   |
+| `kintone-get-general-settings`    | アプリの一般設定を取得                 |
+| `kintone-add-form-fields`         | アプリにフィールドを追加               |
+| `kintone-get-records`             | 複数のレコードを取得                   |
+| `kintone-add-records`             | 複数のレコードを追加                   |
+| `kintone-update-records`          | 複数のレコードを更新                   |
+| `kintone-delete-records`          | 複数のレコードを削除                   |
+| `kintone-update-statuses`         | 複数のレコードのステータスを更新       |
+| `kintone-add-app`                 | 動作テスト環境にアプリを作成           |
+| `kintone-deploy-app`              | アプリ設定を運用環境へ反映             |
+| `kintone-update-general-settings` | アプリの一般設定を変更                 |
+| `kintone-download-file`           | 添付ファイルフィールドのファイルを保存 |
+
+## ドキュメント
+
+- [認証設定ガイド](./docs/ja/authentication.md) - 認証方法の詳細と設定例
+
+## 使用上の注意
+
+### `kintone-download-file`ツールの注意点
+
+- ダウンロードしたファイルは、`--attachments-dir`または`KINTONE_ATTACHMENTS_DIR`で指定したディレクトリに保存されます。
+- `--attachments-dir`または`KINTONE_ATTACHMENTS_DIR`を指定しない場合はツール実行時にエラーになります。
+- `--attachments-dir`または`KINTONE_ATTACHMENTS_DIR`に存在しないディレクトリを指定した場合は、ディレクトリを新規作成してからそこに保存されます。
+
+## 制限事項
+
+### レコード操作の制限
+
+- **添付ファイルフィールド**: レコード登録更新ツールにおいて、添付ファイルフィールドは指定できません
+- **選択フィールド**: ユーザー選択フィールド、組織選択フィールド、グループ選択フィールドは、選択肢を設定している場合のみ登録更新が可能です
+
+### その他の制限
+
+- **ゲストスペースに非対応**: ゲストスペース内のアプリにはアクセスできません
+
+## トラブルシューティング
+
+### 接続エラーになる場合
+
+- ベースURLが正しいか確認してください（例: `https://example.cybozu.com`）。
+- プロキシ環境下では、`HTTPS_PROXY` 環境変数を設定してください。
+- 一時的に接続できない場合は、数分後に再試行してください。
+
+### 認証エラーになる場合
+
+- ユーザー名とパスワードが正しいか確認してください。
+- ユーザー名・パスワードとAPIトークンを同時に指定していないか確認してください。  
+  同時指定された場合は、パスワード認証が優先されます。
+- クライアント証明書を使用している場合、セキュアアクセス用のドメインを使用していることを確認してください（例: `.s.cybozu.com` など、利用リージョンに応じます）。
+
+### 権限エラーになる場合
+
+- 使用しているユーザーまたはAPIトークンに、対象アプリへのアクセス権があるか確認してください。  
+  （アプリ管理権限やレコード閲覧権限が必要な場合があります）
+- ゲストスペース内のアプリにはアクセスできません。
+- APIトークンを使用している場合、必要な権限（「閲覧」「追加」「編集」「削除」など）が付与されているか確認してください。
+
+## サポート方針
+
+kintoneローカルMCPサーバーは、APIサポート窓口の対象外です。
+
+バグ報告・機能要望は[Issues](https://github.com/kintone/mcp-server/issues/new/choose)から登録をお願いします。
+
+## コントリビューション
+
+[Contributing Guide](CONTRIBUTING.md) を参照してください。
+
+## プライバシー
+
+このMCPサーバーは、kintone REST APIに接続します。  
+利用地域に応じた公式プライバシーポリシーは、[Privacy Policy Reference](./PRIVACY.md) を参照してください。
+
+## ライセンス
+
+Copyright 2025 Cybozu, Inc.
+
+Licensed under the [Apache 2.0](LICENSE).
